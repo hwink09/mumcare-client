@@ -3,15 +3,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import {Header} from "@/components/shared/header";
+import Footer from "@/components/shared/footer";
 import type { Product } from "@/types/product";
 
 interface HomePageProps {
   featuredProducts: Product[];
   onNavigate: (page: string) => void;
   onAddToCart: (product: Product) => void;
+  onLoginClick?: () => void;
+  onRegisterClick?: () => void;
 }
 
-export function HomePage({ featuredProducts, onNavigate, onAddToCart }: HomePageProps) {
+export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginClick, onRegisterClick }: HomePageProps) {
   const featuredArticles = [
     {
       id: "1",
@@ -40,7 +44,17 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart }: HomePage
   ];
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+      {/* Header */}
+      <Header 
+        cartItemCount={0} 
+        onCartClick={() => {}} 
+        onLoginClick={onLoginClick || (() => {})} 
+        onRegisterClick={onRegisterClick || (() => {})} 
+        onNavigate={onNavigate}
+      />
+      
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-pink-100 via-purple-100 to-blue-100 overflow-hidden">
         <div className="container mx-auto px-4 py-16 md:py-24">
@@ -279,6 +293,9 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart }: HomePage
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer setCurrentPage={onNavigate} />
     </div>
   );
 }
