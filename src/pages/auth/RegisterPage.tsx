@@ -65,10 +65,10 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
-          
+
           {/* Tabs */}
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={onSwitchToLogin}
               className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
             >
