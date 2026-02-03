@@ -60,7 +60,7 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-8 max-h-[90vh] overflow-y-auto relative shadow-lg">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
 
         {/* Header */}
         <div className="mb-6">
