@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loginUser } from "@/services/userService";
 
 interface LoginPageProps {
   onClose?: () => void;
   onSwitchToRegister?: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
+export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: LoginPageProps) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,11 +27,16 @@ export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
     try {
       const result = await loginUser({ email, password });
       console.log("Login successful:", result);
-      // Có thể redirect hoặc cập nhật state ở đây
-      if (onClose) onClose();
+
+      // Gọi onLoginSuccess để load user info
+      if (onLoginSuccess) {
+        await onLoginSuccess();
+      }
+
+      // Redirect về homepage
+      navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
-    } finally {
       setLoading(false);
     }
   };
@@ -36,17 +44,16 @@ export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
-
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
-          
+
           {/* Tabs */}
           <div className="flex gap-4">
             <button className="px-6 py-2 bg-white text-black font-medium rounded-full border-2 border-gray-300">
               Login
             </button>
-            <button 
+            <button
               onClick={onSwitchToRegister}
               className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
             >
@@ -67,6 +74,7 @@ export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                required
               />
             </div>
           </div>
@@ -82,6 +90,7 @@ export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                required
               />
               <button
                 type="button"
@@ -146,7 +155,7 @@ export function LoginPage({ onClose, onSwitchToRegister }: LoginPageProps) {
           </button>
           <button className="py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
             Facebook
           </button>

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
-import {Header} from "@/components/shared/header";
+import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import type { Product } from "@/types/product";
 
@@ -13,9 +13,12 @@ interface HomePageProps {
   onAddToCart: (product: Product) => void;
   onLoginClick?: () => void;
   onRegisterClick?: () => void;
+  isLoggedIn?: boolean;
+  user?: { firstName?: string; lastName?: string; email?: string };
+  onLogoutClick?: () => void;
 }
 
-export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginClick, onRegisterClick }: HomePageProps) {
+export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginClick, onRegisterClick, isLoggedIn = false, user, onLogoutClick }: HomePageProps) {
   const featuredArticles = [
     {
       id: "1",
@@ -44,17 +47,20 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
   ];
 
   return (
-    
+
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
       {/* Header */}
-      <Header 
-        cartItemCount={0} 
-        onCartClick={() => {}} 
-        onLoginClick={onLoginClick || (() => {})} 
-        onRegisterClick={onRegisterClick || (() => {})} 
+      <Header
+        cartItemCount={0}
+        onCartClick={() => { }}
+        onLoginClick={onLoginClick || (() => { })}
+        onRegisterClick={onRegisterClick || (() => { })}
+        isLoggedIn={isLoggedIn}
+        user={user}
         onNavigate={onNavigate}
+        onLogout={onLogoutClick}
       />
-      
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-pink-100 via-purple-100 to-blue-100 overflow-hidden">
         <div className="container mx-auto px-4 py-16 md:py-24">

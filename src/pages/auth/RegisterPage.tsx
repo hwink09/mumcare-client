@@ -60,15 +60,15 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-8 max-h-[90vh] overflow-y-auto relative shadow-lg">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
 
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
-          
+
           {/* Tabs */}
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={onSwitchToLogin}
               className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
             >
