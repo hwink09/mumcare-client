@@ -1,8 +1,9 @@
-import { Baby, Bell, User, LogOut, ShoppingBag, Gift } from "lucide-react";
+import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface HeaderProps {
   cartItemCount: number;
@@ -11,7 +12,6 @@ interface HeaderProps {
   onRegisterClick: () => void;
   isLoggedIn?: boolean;
   user?: { firstName?: string; lastName?: string; email?: string };
-  userPoints?: number;
   onNavigate: (page: string) => void;
   onLogout?: () => void;
 }
@@ -23,17 +23,36 @@ export function Header({
   onRegisterClick,
   isLoggedIn = false,
   user,
-  userPoints = 0,
   onNavigate,
   onLogout,
 }: HeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
   const userInitial = user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
 
+  const navItems = [
+    { label: "Home", value: "home" },
+    { label: "Products", value: "products" },
+    { label: "Health Tips", value: "articles" },
+    { label: "Pre-Order", value: "preorder" },
+    { label: "About Us", value: "about" },
+    { label: "Contact", value: "contact" },
+  ];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      console.log("Search for:", searchQuery);
+      // Có thể thêm logic tìm kiếm ở đây
+    }
+  };
+
   return (
     <header className={cn("bg-background shadow-sm sticky top-0 z-50 border-b")}>
-      {/* Main Header */}
-      <div className="container mx-auto px-4 py-4">
+      {/* Top Header */}
+      <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <Button
@@ -54,9 +73,38 @@ export function Header({
             </div>
           </Button>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            {/* Notifications - Logged In */}
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
+            <div className="flex items-center w-full bg-gray-100 rounded-lg px-4 py-2 gap-2">
+              <Search className="h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
+              />
+            </div>
+          </form>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Cart Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onCartClick}
+              className="relative"
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  {cartItemCount}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Notifications */}
             {isLoggedIn && (
               <Button
                 variant="ghost"
@@ -70,7 +118,7 @@ export function Header({
               </Button>
             )}
 
-            {/* Auth Buttons */}
+            {/* Auth Buttons - Desktop */}
             <div className={cn("hidden sm:flex gap-2 items-center")}>
               {isLoggedIn ? (
                 <>
@@ -88,7 +136,7 @@ export function Header({
                         >
                           {userInitial}
                         </div>
-                        <span className="font-semibold">{userName}</span>
+                        <span className="font-semibold text-sm">{userName}</span>
                       </Button>
                     }
                     align="end"
@@ -108,22 +156,139 @@ export function Header({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
-                      Đăng xuất
+                      Logout
                     </DropdownMenuItem>
                   </DropdownMenu>
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" onClick={onLoginClick}>
+                  <Button variant="ghost" size="sm" onClick={onLoginClick}>
                     Login
                   </Button>
-                  <Button onClick={onRegisterClick}>Register</Button>
+                  <Button size="sm" onClick={onRegisterClick}>Register</Button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Menu */}
+      <nav className="hidden md:block border-t bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center gap-8">
+            {navItems.map((item) => (
+              <Button
+                key={item.value}
+                variant="ghost"
+                onClick={() => onNavigate(item.value)}
+                className="text-base font-medium hover:text-primary rounded-none border-b-2 border-transparent hover:border-primary py-4"
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-white">
+          <div className="container mx-auto px-4 py-4">
+            {/* Mobile Search */}
+            <form onSubmit={handleSearch} className="mb-4">
+              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 gap-2">
+                <Search className="h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
+                />
+              </div>
+            </form>
+
+            {/* Mobile Nav Items */}
+            <div className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <Button
+                  key={item.value}
+                  variant="ghost"
+                  onClick={() => {
+                    onNavigate(item.value);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="justify-start text-base"
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Mobile Auth */}
+            <div className="border-t mt-4 pt-4">
+              {isLoggedIn ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("profile");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    My Profile
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("orders");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    My Orders
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={onLogout}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full mb-2"
+                    onClick={onLoginClick}
+                  >
+                    Login
+                  </Button>
+                  <Button className="w-full" onClick={onRegisterClick}>
+                    Register
+                  </Button>
                 </>
               )}
             </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }

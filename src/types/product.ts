@@ -6,3 +6,9 @@ export interface Product {
   image: string;
   tags: string[];
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  slug?: string;
+}

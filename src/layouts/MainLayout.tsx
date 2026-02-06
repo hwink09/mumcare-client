@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { HomePage } from "@/pages/home/HomePage";
-import { FEATURED_PRODUCTS } from "@/constants/mockData";
 import type { useAuth, useCart } from "@/hooks/useAuth";
 
 interface MainLayoutProps {
@@ -25,7 +24,7 @@ export function MainLayout({ auth, cart }: MainLayoutProps) {
 
   return (
     <HomePage
-      featuredProducts={FEATURED_PRODUCTS}
+      featuredProducts={[]}
       onNavigate={handleNavigate}
       onAddToCart={cart.addToCart}
       onLoginClick={() => navigate("/login")}
