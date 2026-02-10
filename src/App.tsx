@@ -4,6 +4,8 @@ import { MainLayout } from "@/layouts/MainLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { ProfilePage } from "@/pages/member/ProfilePage";
+import { ContactPage } from "@/pages/Contact";
+import { AboutPage } from "@/pages/About";
 
 function App() {
   const auth = useAuth();
@@ -33,6 +35,43 @@ function App() {
           }
         />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/contact"
+          element={
+            <ContactPage
+              onNavigate={(page) => {
+                if (page === "home") window.location.href = "/";
+                else if (page === "products") window.location.href = "/?section=products";
+              }}
+              onCartClick={() => window.location.href = "/cart"}
+              onLoginClick={() => window.location.href = "/login"}
+              onRegisterClick={() => window.location.href = "/register"}
+              isLoggedIn={auth.isLoggedIn}
+              user={auth.user || undefined}
+              onLogout={auth.onLogout}
+              cartItemCount={cart.items.length}
+            />
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <AboutPage
+              onNavigate={(page) => {
+                if (page === "home") window.location.href = "/";
+                else if (page === "products") window.location.href = "/?section=products";
+                else if (page === "contact") window.location.href = "/contact";
+              }}
+              onCartClick={() => window.location.href = "/cart"}
+              onLoginClick={() => window.location.href = "/login"}
+              onRegisterClick={() => window.location.href = "/register"}
+              isLoggedIn={auth.isLoggedIn}
+              user={auth.user || undefined}
+              onLogout={auth.onLogout}
+              cartItemCount={cart.items.length}
+            />
+          }
+        />
       </Routes>
     </Router>
   );

@@ -17,6 +17,10 @@ export function MainLayout({ auth, cart }: MainLayoutProps) {
       navigate("/orders");
     } else if (page === "loyalty") {
       navigate("/loyalty");
+    } else if (page === "contact") {
+      navigate("/contact");
+    } else if (page === "about") {
+      navigate("/about");
     } else {
       console.log(`Navigate to: ${page}`);
     }
@@ -35,3 +39,4 @@ export function MainLayout({ auth, cart }: MainLayoutProps) {
     />
   );
 }
+
