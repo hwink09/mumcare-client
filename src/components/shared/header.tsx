@@ -43,10 +43,13 @@ export function Header({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      console.log("Search for:", searchQuery);
-      // Có thể thêm logic tìm kiếm ở đây
-    }
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    // Điều hướng tới trang products, chỉ tìm theo tên sản phẩm (search param)
+    const url = new URL(window.location.href);
+    url.pathname = "/products";
+    url.searchParams.set("search", trimmed);
+    window.location.href = url.toString();
   };
 
   return (
@@ -73,19 +76,7 @@ export function Header({
             </div>
           </Button>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="flex items-center w-full bg-gray-100 rounded-lg px-4 py-2 gap-2">
-              <Search className="h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
-              />
-            </div>
-          </form>
+        
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 sm:gap-4">

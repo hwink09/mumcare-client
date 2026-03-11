@@ -31,8 +31,8 @@ export function BlogListPage() {
             try {
                 const [catRes, blogRes] = await Promise.all([getBlogCategories(), getBlogs()]);
                 if (mounted) {
-                    const cats = (catRes?.data || []) as BlogCategory[];
-                    const blogsData = (blogRes?.data || []) as Blog[];
+                    const cats = (Array.isArray(catRes) ? catRes : (catRes as { data?: unknown }).data || []) as BlogCategory[];
+                    const blogsData = (Array.isArray(blogRes) ? blogRes : (blogRes as { data?: unknown }).data || []) as Blog[];
                     setCategories(cats.length ? cats : []);
                     setBlogs(blogsData.length ? blogsData : []);
                 }

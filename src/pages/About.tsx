@@ -1,4 +1,4 @@
-import { Award, Heart, Users, TrendingUp, CheckCircle, Leaf } from "lucide-react";
+import { Heart, Users, TrendingUp, CheckCircle, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/shared/header";

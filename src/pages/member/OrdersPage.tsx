@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyOrders } from "@/services/orderService";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 type OrderItem = {
   _id: string;
@@ -27,7 +30,7 @@ export function OrdersPage() {
     (async () => {
       try {
         const res = await getMyOrders();
-        const items = (res?.data || []) as OrderItem[];
+        const items = (Array.isArray(res) ? res : (res as { data?: unknown }).data || []) as OrderItem[];
         if (mounted) setOrders(items.length ? items : []);
       } catch {
         if (mounted) {

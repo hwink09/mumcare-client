@@ -56,10 +56,10 @@ function App() {
           path="/cart"
           element={<CartPage items={cart.items} onUpdateQuantity={cart.updateQuantity} onRemoveItem={cart.removeItem} />}
         />
-        <Route path="/checkout" element={<CheckoutPage isLoggedIn={auth.isLoggedIn} />} />
+        <Route path="/checkout" element={<CheckoutPage isLoggedIn={auth.isLoggedIn} cartItems={cart.items} />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/loyalty" element={<LoyaltyPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={<ProfilePage initialUser={auth.user || undefined} />} />
 
         <Route
           path="/contact"

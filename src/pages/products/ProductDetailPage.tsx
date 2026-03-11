@@ -4,6 +4,10 @@ import { Star } from "lucide-react";
 import { addRating, getProductById } from "@/services/productService";
 import type { Product } from "@/types/product";
 
+// ui components
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
 interface ProductDetailPageProps {
   isLoggedIn: boolean;
   onAddToCart?: (product: Product) => void;
@@ -19,6 +23,7 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
   const [star, setStar] = useState(5);
   const [comment, setComment] = useState("");
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -45,7 +50,23 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
     };
   }, [id]);
 
-  const mainImage = useMemo(() => product?.images?.[0] || product?.image || "https://placehold.co/800x500?text=MomCare", [product]);
+  const mainImage = useMemo(() => {
+    const img = product?.image;
+    const imgs = product?.images;
+  
+    if (typeof img === "string" && img) return img;
+    if (Array.isArray(imgs) && imgs.length) return imgs[0];
+    if (typeof imgs === "string" && imgs) return imgs;
+  
+    return "https://placehold.co/800x500?text=MomCare";
+  }, [product]);
+  
+  const handleAddToCartClick = () => {
+    if (!product) return;
+    onAddToCart?.(product);
+    setAddedMessage("Added to cart");
+    setTimeout(() => setAddedMessage(null), 2000);
+  };
 
   const handleRate = async () => {
     if (!id || !isLoggedIn) return;
@@ -70,6 +91,7 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
         <Button variant="outline" onClick={() => navigate("/products")} className="mb-6">Back to products</Button>
 
         {error && <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
+        {addedMessage && <div className="mb-4 p-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm">{addedMessage}</div>}
 
         {!product ? (
           <div className="text-center text-muted-foreground">Product not found</div>
@@ -85,7 +107,7 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
               <div className="text-sm text-muted-foreground mb-6">Brand: {product.brand || "MomCare"}</div>
 
               <div className="flex gap-3">
-                <Button onClick={() => onAddToCart?.(product)}>Add to cart</Button>
+                <Button onClick={handleAddToCartClick}>Add to cart</Button>
                 <Button variant="outline" onClick={() => navigate("/cart")}>Go to cart</Button>
               </div>
             </div>

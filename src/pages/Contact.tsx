@@ -115,7 +115,7 @@ export function ContactPage({
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
             Get in Touch
           </h1>
-          <p className="text-center text-gray-600 max-w-2xl mx-auto">
+      <p className="text-center text-gray-600 max-w-2xl mx-auto">
             Have questions about our products or services? We'd love to hear from
             you. Contact us today and let's start a conversation!
           </p>

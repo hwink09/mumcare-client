@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, User, Mail, Lock, Phone, X } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerUser } from "@/services/userService";
 

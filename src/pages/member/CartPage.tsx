@@ -4,9 +4,11 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import type { Product } from "@/types/product";
 
-export type CartItem = Product & { quantity: number };
+// ensure cart items always have an id (mapped from server _id earlier)
+export type CartItem = Product & { quantity: number; id: string };
 
 interface CartPageProps {
     items: CartItem[];
@@ -55,8 +57,19 @@ export function CartPage({ items, onUpdateQuantity, onRemoveItem }: CartPageProp
                                     <CardContent className="py-4">
                                         <div className="flex gap-4">
                                             <div className="w-24 h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                <img src={(item as any).image} alt={item.name} className="w-full h-full object-cover" />
+                                                <ImageWithFallback
+                                                    src={
+                                                        typeof item.image === "string" && item.image
+                                                            ? item.image
+                                                            : Array.isArray(item.images) && item.images.length
+                                                                ? item.images[0]
+                                                                : typeof item.images === "string" && item.images
+                                                                    ? item.images
+                                                                    : "https://placehold.co/600x400?text=MomCare"
+                                                    }
+                                                    alt={item.title || item.name || "Product image"}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between gap-3">
@@ -124,7 +137,6 @@ export function CartPage({ items, onUpdateQuantity, onRemoveItem }: CartPageProp
                                     </div>
 
                                     <Button className="w-full mt-5" onClick={() => navigate("/checkout")}>Proceed to Checkout</Button>
-                                    <p className="text-xs text-muted-foreground mt-3">Checkout is UI-only for now (backend not implemented).</p>
                                 </CardContent>
                             </Card>
 

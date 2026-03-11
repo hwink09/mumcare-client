@@ -29,7 +29,8 @@ export function BlogDetailPage() {
     (async () => {
       try {
         const res = await getBlogById(id);
-        if (mounted) setBlog((res?.data || res) as Blog);
+        const blog = (res && (Array.isArray(res) ? res[0] : (res as { data?: unknown }).data || res)) as Blog | undefined;
+        if (mounted) setBlog(blog ?? null);
       } catch {
         if (mounted) {
           setError("Failed to load article. Please try again.");

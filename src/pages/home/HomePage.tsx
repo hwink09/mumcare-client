@@ -24,6 +24,7 @@ interface HomePageProps {
 export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginClick, onRegisterClick, isLoggedIn = false, user, onLogoutClick }: HomePageProps) {
   const [localFeatured, setLocalFeatured] = useState<Product[]>(featuredProducts || []);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -31,24 +32,42 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
       try {
         // Fetch categories
         const catResp = await getCategories();
-        const cats = catResp.data || [];
-        const mappedCats: Category[] = cats.map((c: any) => ({
-          id: c._id || c.id,
+        const raw = (Array.isArray(catResp) ? catResp : (catResp as { data?: unknown }).data || []) as Array<{
+          _id?: string;
+          id?: string;
+          name?: string;
+          title?: string;
+          slug?: string;
+        }>;
+        const mappedCats: Category[] = raw.map((c) => ({
+          _id: c._id || c.id || "",
+          id: c._id || c.id || "",
           name: c.name || c.title || "",
-          slug: c.slug,
+          description: "",
         }));
         if (mounted) setCategories(mappedCats);
 
         // Fetch products if not provided
         if ((featuredProducts?.length || 0) === 0) {
           const resp = await getProducts({ page: 1, limit: 8 });
-          const products = resp.data || [];
-          const mapped: Product[] = products.map((p: any) => ({
-            id: p._id || p.id,
-            name: p.title || p.name,
+          const rawProducts = (Array.isArray(resp) ? resp : (resp as { data?: unknown }).data || []) as Array<{
+            _id?: string;
+            id?: string;
+            title?: string;
+            name?: string;
+            description?: string;
+            price?: number | string;
+            images?: string[];
+          }>;
+          const mapped: Product[] = rawProducts.map((p) => ({
+            _id: p._id || p.id || "",
+            id: p._id || p.id || "",
+            title: p.title,
+            name: p.title || p.name || "",
             description: p.description || "",
             price: Number(p.price) || 0,
-            image: Array.isArray(p.images) && p.images.length ? p.images[0] : "/",
+            images: p.images || [],
+            image: Array.isArray(p.images) && p.images.length ? p.images[0] : "",
             tags: [],
           }));
           if (mounted) setLocalFeatured(mapped);
@@ -64,12 +83,18 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
     return () => { mounted = false };
   }, [featuredProducts]);
 
+  const handleAddToCartClick = (product: Product) => {
+    onAddToCart(product);
+    setAddedMessage(`Added "${product.name}" to cart`);
+    setTimeout(() => setAddedMessage(null), 2000);
+  };
+
   return (
     <div className="home-container">
       {/* Header */}
       <Header
         cartItemCount={0}
-        onCartClick={() => { }}
+        onCartClick={() => onNavigate("cart")}
         onLoginClick={onLoginClick || (() => { })}
         onRegisterClick={onRegisterClick || (() => { })}
         isLoggedIn={isLoggedIn}
@@ -77,6 +102,13 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
         onNavigate={onNavigate}
         onLogout={onLogoutClick}
       />
+
+      {/* Simple add-to-cart toast */}
+      {addedMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 rounded-md bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg">
+          {addedMessage}
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="hero-section">
@@ -237,7 +269,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                     <span className="product-price">
                       ${product.price.toFixed(2)}
                     </span>
-                    <Button size="sm" onClick={() => onAddToCart(product)}>
+                    <Button size="sm" onClick={() => handleAddToCartClick(product)}>
                       Add to Cart
                     </Button>
                   </div>
