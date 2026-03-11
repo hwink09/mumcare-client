@@ -1,153 +1,180 @@
 const API_BASE_URL = 'http://localhost:8017/v1';
 
-export const registerUser = async (userData: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password: string;
-}) => {
-  try {
-    console.log('Registering user with:', userData);
+const authService = {
+  register: async (userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => {
     const response = await fetch(`${API_BASE_URL}/users/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Để gửi cookie
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(userData),
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response headers:', response.headers);
-    
-    const text = await response.text();
-    console.log('Response text:', text);
-    
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('Failed to parse JSON:', e);
-      throw new Error('Server returned invalid JSON');
-    }
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Registration failed');
-    }
-
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Registration failed');
     return data;
-  } catch (error) {
-    console.error('Register error:', error);
-    throw error;
-  }
-};
+  },
 
-// Login User
-export const loginUser = async (credentials: {
-  email: string;
-  password: string;
-}) => {
-  try {
-    console.log('Logging in with:', credentials);
+  login: async (credentials: { email: string; password: string }) => {
     const response = await fetch(`${API_BASE_URL}/users/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Để nhận cookie refreshToken
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(credentials),
     });
 
-    console.log('Response status:', response.status);
-    
-    const text = await response.text();
-    console.log('Response text:', text);
-    
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('Failed to parse JSON:', e);
-      throw new Error('Server returned invalid JSON');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Login failed');
+
+    // Server response shape:
+    // { success, message, accessToken, data: user }
+    const token = data.accessToken || data?.data?.accessToken;
+    if (token) {
+      localStorage.setItem('accessToken', token);
     }
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+    // Always return the user object for convenience
+    const user = data?.data || data?.user || data;
+    return user;
+  },
+
+  logout: async () => {
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Lưu accessToken vào localStorage
-    if (data.accessToken) {
-      localStorage.setItem('accessToken', data.accessToken);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-};
-
-// Logout User
-export const logoutUser = async () => {
-  try {
-    const accessToken = localStorage.getItem('accessToken');
-    
     const response = await fetch(`${API_BASE_URL}/users/auth/logout`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
+      headers,
       credentials: 'include',
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Logout failed');
-    }
-
-    // Xóa accessToken từ localStorage
+    // Clear token from localStorage
     localStorage.removeItem('accessToken');
 
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Logout failed');
     return data;
-  } catch (error) {
-    console.error('Logout error:', error);
-    throw error;
-  }
-};
+  },
 
+  getMe: async (): Promise<{ firstName?: string; lastName?: string; email?: string; phone?: string; role?: string; _id?: string; id?: string }> => {
+    const fetchMe = async () => {
+      const token = localStorage.getItem('accessToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
-export const getCurrentUser = async () => {
-  try {
-    const accessToken = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
 
-    if (!accessToken) {
-      throw new Error('No access token found');
+      const data = await response.json();
+      return { response, data };
+    };
+
+    // First attempt with current access token
+    let { response, data } = await fetchMe();
+
+    // If access token is expired (401/403/410 or specific message), try to refresh once
+    if (
+      !response.ok &&
+      (response.status === 401 ||
+        response.status === 403 ||
+        response.status === 410 ||
+        typeof data?.message === 'string' &&
+          data.message.toLowerCase().includes('token expired'))
+    ) {
+      try {
+        await refreshAccessToken();
+        ({ response, data } = await fetchMe());
+      } catch {
+        // Refresh failed, clear token and rethrow below
+        localStorage.removeItem('accessToken');
+      }
+    }
+
+    if (!response.ok) {
+      // If still unauthorized after refresh, ensure local token is cleared
+      if (response.status === 401 || response.status === 403 || response.status === 410) {
+        localStorage.removeItem('accessToken');
+      }
+      throw new Error(data?.message || 'Failed to fetch user');
+    }
+
+    return data.data || data;
+  },
+
+  updateProfile: async (userData: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }) => {
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_BASE_URL}/users/me`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
+      method: 'PUT',
+      headers,
       credentials: 'include',
+      body: JSON.stringify(userData),
     });
 
     const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to update profile');
+    
+    return data.data || data;
+  },
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch user');
-    }
+  forgotPassword: async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/users/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
+    });
 
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to send reset link');
+    
     return data;
-  } catch (error) {
-    console.error('Get current user error:', error);
-    throw error;
-  }
+  },
+
+  resetPassword: async (token: string, password: string, confirmPassword: string) => {
+    const response = await fetch(`${API_BASE_URL}/users/auth/reset-password/${token}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password, confirmPassword }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to reset password');
+    
+    return data;
+  },
 };
+
+export default authService;
+
+// Legacy exports for compatibility
+export const registerUser = authService.register;
+export const loginUser = authService.login;
+export const logoutUser = authService.logout;
+export const getCurrentUser = authService.getMe;
+export const updateProfile = authService.updateProfile;
 
 // Refresh Access Token
 export const refreshAccessToken = async () => {

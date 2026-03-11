@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loginUser } from "@/services/userService";
+import type { CurrentUser } from "@/hooks/useAuth";
 
 interface LoginPageProps {
   onClose?: () => void;
   onSwitchToRegister?: () => void;
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: (user: CurrentUser | null) => void;
 }
 
 export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: LoginPageProps) {
@@ -27,13 +28,20 @@ export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: Login
     try {
       const result = await loginUser({ email, password });
       console.log("Login successful:", result);
+      console.log("stored token", localStorage.getItem('accessToken'));
 
-      // Gọi onLoginSuccess để load user info
+      // Call onLoginSuccess to update user state
       if (onLoginSuccess) {
-        await onLoginSuccess();
+        // loginUser bây giờ luôn trả về user object
+        await onLoginSuccess(result as any);
       }
 
-      // Redirect về homepage
+      // close modal if requested
+      if (onClose) {
+        onClose();
+      }
+
+      // Redirect to homepage
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

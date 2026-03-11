@@ -9,6 +9,7 @@ export interface CurrentUser {
   firstName?: string;
   lastName?: string;
   role?: string;
+  phone?: string;
 }
 
 export function useAuth() {
@@ -19,9 +20,12 @@ export function useAuth() {
   const loadMe = async () => {
     try {
       const me = await getCurrentUser();
-      setUser(me?.user ?? me);
+      // User data comes directly from the API
+      const userData = (me as any)?._id ? (me as any) : (me as any)?.data || me;
+      setUser(userData);
       setIsLoggedIn(true);
-    } catch {
+    } catch (error) {
+      console.error('Failed to load user:', error);
       setUser(null);
       setIsLoggedIn(false);
     } finally {
@@ -30,16 +34,26 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    // Check if token exists in localStorage
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // Token exists, try to load user data
+      void loadMe();
+    } else {
+      // No token, user not logged in
+      setLoading(false);
+    }
+  }, []);
+
+  const onLoggedIn = async (loggedInUser?: CurrentUser | null) => {
+    // Nếu login vừa trả về user, ưu tiên set trực tiếp, tránh phụ thuộc /users/me
+    if (loggedInUser && (loggedInUser._id || loggedInUser.id || loggedInUser.email)) {
+      setUser(loggedInUser);
+      setIsLoggedIn(true);
       setLoading(false);
       return;
     }
-    void loadMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const onLoggedIn = async () => {
     setLoading(true);
     await loadMe();
   };
@@ -50,7 +64,6 @@ export function useAuth() {
     } catch {
       // ignore
     }
-    localStorage.removeItem("accessToken");
     setUser(null);
     setIsLoggedIn(false);
   };
@@ -64,18 +77,21 @@ export function useAuth() {
   };
 }
 
-export type CartItem = Product & { quantity: number };
+// cart items stored in state always include an `id` string
+export type CartItem = Product & { quantity: number; id: string };
 
 export function useCart() {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = (product: Product) => {
+    const pid = product.id || product._id || "";
     setItems((prev) => {
-      const existing = prev.find((p) => p.id === product.id);
+      const existing = prev.find((p) => p.id === pid);
       if (existing) {
-        return prev.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p));
+        return prev.map((p) => (p.id === pid ? { ...p, quantity: p.quantity + 1 } : p));
       }
-      return [...prev, { ...product, quantity: 1 }];
+      // spread product and ensure id string present
+      return [...prev, { ...product, id: pid, quantity: 1 } as CartItem];
     });
   };
 

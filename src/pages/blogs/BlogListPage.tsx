@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MOCK_BLOG_CATEGORIES, MOCK_BLOGS } from "@/constants/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,16 +31,16 @@ export function BlogListPage() {
             try {
                 const [catRes, blogRes] = await Promise.all([getBlogCategories(), getBlogs()]);
                 if (mounted) {
-                    const cats = (catRes?.data || []) as BlogCategory[];
-                    const blogsData = (blogRes?.data || []) as Blog[];
-                    setCategories(cats.length ? cats : (MOCK_BLOG_CATEGORIES as BlogCategory[]));
-                    setBlogs(blogsData.length ? blogsData : (MOCK_BLOGS as Blog[]));
+                    const cats = (Array.isArray(catRes) ? catRes : (catRes as { data?: unknown }).data || []) as BlogCategory[];
+                    const blogsData = (Array.isArray(blogRes) ? blogRes : (blogRes as { data?: unknown }).data || []) as Blog[];
+                    setCategories(cats.length ? cats : []);
+                    setBlogs(blogsData.length ? blogsData : []);
                 }
             } catch {
                 if (mounted) {
-                    setError("Đang hiển thị dữ liệu demo vì BE chưa sẵn sàng.");
-                    setCategories(MOCK_BLOG_CATEGORIES as BlogCategory[]);
-                    setBlogs(MOCK_BLOGS as Blog[]);
+                    setError("Failed to load articles. Please try again.");
+                    setCategories([]);
+                    setBlogs([]);
                 }
             } finally {
                 if (mounted) setLoading(false);

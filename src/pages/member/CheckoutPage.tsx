@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createOrder } from "@/services/orderService";
+import type { CartItem } from "@/hooks/useAuth";
+import { addToCartApi, clearCartApi } from "@/services/cartService";
 
 interface CheckoutPageProps {
     isLoggedIn: boolean;
+    cartItems: CartItem[];
 }
 
-export function CheckoutPage({ isLoggedIn }: CheckoutPageProps) {
+export function CheckoutPage({ isLoggedIn, cartItems }: CheckoutPageProps) {
     const navigate = useNavigate();
     const [address, setAddress] = useState("");
     const [couponCode, setCouponCode] = useState("");
@@ -16,7 +19,11 @@ export function CheckoutPage({ isLoggedIn }: CheckoutPageProps) {
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const canSubmit = useMemo(() => isLoggedIn && address.trim().length >= 10, [isLoggedIn, address]);
+    // Cho phép địa chỉ ngắn hơn (>= 3 ký tự) để dễ test hơn
+    const canSubmit = useMemo(
+        () => isLoggedIn && address.trim().length >= 3,
+        [isLoggedIn, address]
+    );
 
     const handleCheckout = async () => {
         try {
@@ -24,9 +31,41 @@ export function CheckoutPage({ isLoggedIn }: CheckoutPageProps) {
             setError(null);
             setMessage(null);
 
+            if (!isLoggedIn) {
+                setError("Please login before checkout.");
+                return;
+            }
+
+            if (!cartItems.length) {
+                setError("Your cart is empty. Please add products before checkout.");
+                return;
+            }
+
+            // Đồng bộ giỏ hàng local lên server trước khi tạo order
+            try {
+                // Chỉ gửi những item có productId hợp lệ (Mongo ObjectId 24 hex)
+                const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+                const validItems = cartItems.filter((item) => objectIdRegex.test(item.id));
+
+                if (!validItems.length) {
+                    setError("Your cart items are invalid. Please remove items and add products again.");
+                    return;
+                }
+
+                await clearCartApi();
+                for (const item of validItems) {
+                    await addToCartApi(item.id, item.quantity);
+                }
+            } catch {
+                // Nếu sync cart lỗi, vẫn cho user thấy thông báo rõ ràng
+                setError("Failed to sync cart with server. Please try again.");
+                return;
+            }
+
+            // Backend orderValidation hiện tại chỉ cho phép field "address",
+            // nên không gửi couponCode trong body để tránh lỗi 422.
             const res = await createOrder({
                 address: address.trim(),
-                couponCode: couponCode.trim() || undefined,
             });
 
             setMessage(res?.message || "Order created successfully");

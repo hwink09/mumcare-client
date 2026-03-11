@@ -1,25 +1,34 @@
+import { useState } from "react";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { Modal } from "@/components/ui/Modal";
-import type { useAuth } from "@/hooks/useAuth";
 
-interface AuthLayoutProps {
-  auth: ReturnType<typeof useAuth>;
-}
+export function AuthLayout() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
-export function AuthLayout({ auth }: AuthLayoutProps) {
+  const handleLoginClick = () => {
+    setShowRegister(false);
+    setShowLogin(true);
+  };
+
+  const handleRegisterClick = () => {
+    setShowLogin(false);
+    setShowRegister(true);
+  };
+
   return (
     <>
-      <Modal isOpen={auth.showLogin} onClose={() => auth.setShowLogin(false)}>
+      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)}>
         <LoginPage
-          onClose={() => auth.setShowLogin(false)}
-          onSwitchToRegister={auth.handleRegisterClick}
+          onClose={() => setShowLogin(false)}
+          onSwitchToRegister={handleRegisterClick}
         />
       </Modal>
-      <Modal isOpen={auth.showRegister} onClose={() => auth.setShowRegister(false)}>
+      <Modal isOpen={showRegister} onClose={() => setShowRegister(false)}>
         <RegisterPage
-          onClose={() => auth.setShowRegister(false)}
-          onSwitchToLogin={auth.handleLoginClick}
+          onClose={() => setShowRegister(false)}
+          onSwitchToLogin={handleLoginClick}
         />
       </Modal>
     </>

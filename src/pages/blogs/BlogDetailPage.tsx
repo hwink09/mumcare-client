@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { MOCK_BLOGS } from "@/constants/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getBlogById } from "@/services/blogService";
@@ -30,12 +29,12 @@ export function BlogDetailPage() {
     (async () => {
       try {
         const res = await getBlogById(id);
-        if (mounted) setBlog((res?.data || res) as Blog);
+        const blog = (res && (Array.isArray(res) ? res[0] : (res as { data?: unknown }).data || res)) as Blog | undefined;
+        if (mounted) setBlog(blog ?? null);
       } catch {
         if (mounted) {
-          setError("Đang hiển thị dữ liệu demo vì BE chưa sẵn sàng.");
-          const mock = MOCK_BLOGS.find((b) => b._id === id) || null;
-          setBlog(mock);
+          setError("Failed to load article. Please try again.");
+          setBlog(null);
         }
       } finally {
         if (mounted) setLoading(false);

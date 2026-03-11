@@ -4,7 +4,6 @@ import { Gift, Star, ShoppingBag, Megaphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/services/userService";
-import { MOCK_CURRENT_USER } from "@/constants/mockData";
 
 export function LoyaltyPage() {
   const navigate = useNavigate();
@@ -20,7 +19,7 @@ export function LoyaltyPage() {
         const user = res?.data || res?.user || res;
         if (mounted) setPoints(Number(user?.loyaltyPoint || 0));
       } catch {
-        if (mounted) setPoints(Number(MOCK_CURRENT_USER.loyaltyPoint || 0));
+        if (mounted) setPoints(0);
       } finally {
         if (mounted) setLoading(false);
       }
