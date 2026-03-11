@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Star } from "lucide-react";
-import { MOCK_PRODUCTS } from "@/constants/mockData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { addRating, getProductById } from "@/services/productService";
 import type { Product } from "@/types/product";
 
@@ -35,9 +32,8 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
         if (mounted) setProduct((res?.data || res) as Product);
       } catch {
         if (mounted) {
-          setError("Đang hiển thị dữ liệu demo vì BE chưa sẵn sàng.");
-          const mock = MOCK_PRODUCTS.find((p) => p._id === id || p.id === id) || null;
-          setProduct(mock);
+          setError("Failed to load product. Please try again.");
+          setProduct(null);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -60,7 +56,7 @@ export function ProductDetailPage({ isLoggedIn, onAddToCart }: ProductDetailPage
       setProduct((refetch?.data || refetch) as Product);
       setComment("");
     } catch {
-      setError("Không gửi được rating do BE chưa sẵn sàng.");
+      setError("Failed to submit rating. Please try again.");
     } finally {
       setRatingLoading(false);
     }

@@ -7,11 +7,11 @@ import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import type { Product, Category } from "@/types/product";
 import { useEffect, useState } from "react";
-import productService from "@/services/productService";
+import { getProducts, getCategories } from "@/services/productService";
 import "@/styles/home.css";
 
 interface HomePageProps {
-  featuredProducts: Product[];
+  featuredProducts?: Product[];
   onNavigate: (page: string) => void;
   onAddToCart: (product: Product) => void;
   onLoginClick?: () => void;
@@ -30,7 +30,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
     const fetchData = async () => {
       try {
         // Fetch categories
-        const catResp = await productService.getCategories();
+        const catResp = await getCategories();
         const cats = catResp.data || [];
         const mappedCats: Category[] = cats.map((c: any) => ({
           id: c._id || c.id,
@@ -41,7 +41,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
 
         // Fetch products if not provided
         if ((featuredProducts?.length || 0) === 0) {
-          const resp = await productService.getProducts({ page: 1, limit: 8 });
+          const resp = await getProducts({ page: 1, limit: 8 });
           const products = resp.data || [];
           const mapped: Product[] = products.map((p: any) => ({
             id: p._id || p.id,
@@ -52,7 +52,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
             tags: [],
           }));
           if (mounted) setLocalFeatured(mapped);
-        } else {
+        } else if (featuredProducts && featuredProducts.length > 0) {
           setLocalFeatured(featuredProducts);
         }
       } catch (error) {
@@ -216,12 +216,12 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
               <Card key={product.id} className="product-card">
                 <div className="product-image-wrapper">
                   <ImageWithFallback
-                    src={product.image}
-                    alt={product.name}
+                    src={product.image ?? ""}
+                    alt={product.name ?? ""}
                     className="product-image"
                   />
                   <div className="product-tags-wrapper">
-                    {product.tags.map((tag: string) => (
+                    {product.tags?.map((tag: string) => (
                       <Badge key={tag} variant="secondary" className="product-tag">
                         {tag}
                       </Badge>

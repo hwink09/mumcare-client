@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MOCK_ORDERS } from "@/constants/mockData";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyOrders } from "@/services/orderService";
 
 type OrderItem = {
@@ -32,11 +28,11 @@ export function OrdersPage() {
       try {
         const res = await getMyOrders();
         const items = (res?.data || []) as OrderItem[];
-        if (mounted) setOrders(items.length ? items : (MOCK_ORDERS as OrderItem[]));
+        if (mounted) setOrders(items.length ? items : []);
       } catch {
         if (mounted) {
-          setError("Đang hiển thị dữ liệu demo vì BE chưa sẵn sàng.");
-          setOrders(MOCK_ORDERS as OrderItem[]);
+          setError("Failed to load orders. Please try again.");
+          setOrders([]);
         }
       } finally {
         if (mounted) setLoading(false);

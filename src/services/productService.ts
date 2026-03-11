@@ -75,3 +75,25 @@ export const getProductById = async (id: string) => {
 
   return data;
 };
+
+// Fetch all product categories
+export const getCategories = async () => {
+  const response = await fetch(`${API_BASE_URL}/product-categories`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "Failed to fetch categories");
+  }
+  return data;
+};
+
+// Default export for convenience
+export default {
+  getProducts,
+  addRating,
+  getProductById,
+  getCategories,
+};

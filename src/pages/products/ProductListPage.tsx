@@ -7,9 +7,7 @@ import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import type { Category, Product } from "@/types/product";
-import { getProducts } from "@/services/productService";
-import { getCategories } from "@/services/categoryService";
-import { MOCK_CATEGORIES, MOCK_PRODUCTS } from "@/constants/mockData";
+import { getProducts, getCategories } from "@/services/productService";
 
 interface ProductListPageProps {
   isLoggedIn?: boolean;
@@ -61,9 +59,9 @@ export function ProductListPage({ isLoggedIn = false, user, onLogoutClick }: Pro
       try {
         const res = await getCategories();
         const cats = (res?.data || []) as Category[];
-        if (mounted) setCategories(cats.length ? cats : (MOCK_CATEGORIES as Category[]));
+        if (mounted) setCategories(cats.length ? cats : []);
       } catch {
-        if (mounted) setCategories(MOCK_CATEGORIES as Category[]);
+        if (mounted) setCategories([]);
       }
     })();
 
@@ -87,16 +85,11 @@ export function ProductListPage({ isLoggedIn = false, user, onLogoutClick }: Pro
         });
 
         const items = (res?.data || []) as Product[];
-        if (mounted) setProducts(items.length ? items : MOCK_PRODUCTS);
+        if (mounted) setProducts(items.length ? items : []);
       } catch (e) {
         if (mounted) {
-          setError("Đang hiển thị dữ liệu demo vì BE chưa sẵn sàng.");
-          const filtered = MOCK_PRODUCTS.filter((p) => {
-            const byCategory = !categoryId || p.categoryId === categoryId;
-            const bySearch = !search || (p.title || p.name || "").toLowerCase().includes(search.toLowerCase());
-            return byCategory && bySearch;
-          });
-          setProducts(filtered);
+          setError("Failed to load products. Please try again.");
+          setProducts([]);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -206,7 +199,7 @@ export function ProductListPage({ isLoggedIn = false, user, onLogoutClick }: Pro
                     <div className="relative h-44 bg-gray-100">
                       <ImageWithFallback
                         src={p.image || "https://placehold.co/600x400?text=MomCare"}
-                        alt={p.name}
+                        alt={p.name ?? "Product image"}
                         className="w-full h-full object-cover"
                       />
                     </div>
