@@ -28,7 +28,6 @@ function App() {
           path="/login"
           element={
             <LoginPage
-              onClose={() => window.history.back()}
               onSwitchToRegister={() => (window.location.href = "/register")}
               onLoginSuccess={auth.onLoggedIn}
             />

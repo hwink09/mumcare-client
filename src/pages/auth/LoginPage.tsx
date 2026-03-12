@@ -43,18 +43,21 @@ export function LoginPage({
 
     try {
       const result = await loginUser({ email, password });
+      const loggedInUser = (result as any)?.data || (result as any)?.user || result;
+      const role = (loggedInUser as any)?.role;
+
       // Cập nhật user state nếu có
       if (onLoginSuccess) {
-        await onLoginSuccess(result as any);
+        await onLoginSuccess(loggedInUser as any);
       }
       if (onClose) {
         onClose();
       }
 
       // Điều hướng dựa trên role
-      if (result && result.role === "staff") {
+      if (role === "staff") {
         navigate("/staff");
-      } else if (result && result.role === "admin") {
+      } else if (role === "admin") {
         navigate("/admin");
       } else {
         navigate("/"); // HomePage cho client hoặc role khác
