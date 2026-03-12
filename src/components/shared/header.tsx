@@ -28,7 +28,7 @@ export function Header({
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const userInitial = user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
 
@@ -36,7 +36,6 @@ export function Header({
     { label: "Home", value: "home" },
     { label: "Products", value: "products" },
     { label: "Health Tips", value: "articles" },
-    { label: "Pre-Order", value: "preorder" },
     { label: "About Us", value: "about" },
     { label: "Contact", value: "contact" },
   ];
@@ -76,7 +75,7 @@ export function Header({
             </div>
           </Button>
 
-        
+
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
