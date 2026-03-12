@@ -74,6 +74,20 @@ const productService = {
     return data.data || data;
   },
 
+  update: async (id: string, payload: Record<string, unknown>) => {
+    const response = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: getHeaders(true),
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to update product');
+    
+    return data.data || data;
+  },
+
   getCategories: async () => {
     const response = await fetch(`${API_BASE_URL}/product-categories`, {
       method: 'GET',
@@ -94,3 +108,4 @@ export const getProducts = productService.getAll;
 export const getProductById = productService.getById;
 export const addRating = productService.addRating;
 export const getCategories = productService.getCategories;
+export const updateProduct = productService.update;

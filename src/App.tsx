@@ -3,6 +3,8 @@ import { useAuth, useCart } from "@/hooks/useAuth";
 import { MainLayout } from "@/layouts/MainLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { StaffLoginPage } from "@/pages/staff/StaffLoginPage";
+import { StaffDashboardPage } from "@/pages/staff/StaffDashboardPage";
 import { BlogDetailPage } from "@/pages/blogs/BlogDetailPage";
 import { BlogListPage } from "@/pages/blogs/BlogListPage";
 import { AboutPage } from "@/pages/About";
@@ -30,6 +32,23 @@ function App() {
               onClose={() => window.history.back()}
               onSwitchToRegister={() => (window.location.href = "/register")}
               onLoginSuccess={auth.onLoggedIn}
+            />
+          }
+        />
+        <Route
+          path="/staff/login"
+          element={
+            <StaffLoginPage
+              onLoginSuccess={auth.onLoggedIn}
+            />
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <StaffDashboardPage
+              user={auth.user}
+              onLogout={auth.onLogout}
             />
           }
         />

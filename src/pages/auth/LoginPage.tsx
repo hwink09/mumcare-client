@@ -9,12 +9,28 @@ interface LoginPageProps {
   onClose?: () => void;
   onSwitchToRegister?: () => void;
   onLoginSuccess?: (user: CurrentUser | null) => void;
+  initialEmail?: string;
+  initialPassword?: string;
+  title?: string;
+  subtitle?: string;
+  showRegister?: boolean;
+  redirectPath?: string | null;
 }
 
-export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: LoginPageProps) {
+export function LoginPage({
+  onClose,
+  onSwitchToRegister,
+  onLoginSuccess,
+  initialEmail = "",
+  initialPassword = "",
+  title = "Welcome to MomCare Store",
+  subtitle,
+  showRegister = true,
+  redirectPath = "/",
+}: LoginPageProps) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,8 +57,10 @@ export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: Login
         onClose();
       }
 
-      // Redirect to homepage
-      navigate("/");
+      // Redirect after login (default to home)
+      if (redirectPath) {
+        navigate(redirectPath);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
       setLoading(false);
@@ -54,19 +72,22 @@ export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: Login
       <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
+          <h2 className="text-2xl font-bold mb-4">{title}</h2>
+          {subtitle ? <p className="text-sm text-muted-foreground mb-4">{subtitle}</p> : null}
 
           {/* Tabs */}
           <div className="flex gap-4">
             <button className="px-6 py-2 bg-white text-black font-medium rounded-full border-2 border-gray-300">
               Login
             </button>
-            <button
-              onClick={onSwitchToRegister}
-              className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
-            >
-              Register
-            </button>
+            {showRegister && (
+              <button
+                onClick={onSwitchToRegister}
+                className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
+              >
+                Register
+              </button>
+            )}
           </div>
         </div>
 

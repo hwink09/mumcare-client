@@ -20,6 +20,7 @@ export function MainLayout({ auth, cart }: MainLayoutProps) {
     else if (page === "cart") navigate("/cart");
     else if (page === "contact") navigate("/contact");
     else if (page === "about") navigate("/about");
+    else if (page === "staff-login") navigate("/staff/login");
     else console.log(`Navigate to: ${page}`);
   };
 
