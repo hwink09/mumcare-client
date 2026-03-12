@@ -26,7 +26,6 @@ export function LoginPage({
   title = "Welcome to MomCare Store",
   subtitle,
   showRegister = true,
-  redirectPath = "/",
 }: LoginPageProps) {
   const navigate = useNavigate();
   const [email, setEmail] = useState(initialEmail);
@@ -48,7 +47,7 @@ export function LoginPage({
 
       // Cập nhật user state nếu có
       if (onLoginSuccess) {
-        await onLoginSuccess(loggedInUser as any);
+        onLoginSuccess(loggedInUser as any);
       }
       if (onClose) {
         onClose();

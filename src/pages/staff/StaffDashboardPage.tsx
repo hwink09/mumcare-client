@@ -137,10 +137,6 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
     await handleStatusUpdate(orderId, "canceled");
   };
 
-  const handleRefund = async (orderId: string) => {
-    if (!window.confirm("Mark this order as refunded and canceled?")) return;
-    await handleStatusUpdate(orderId, "canceled");
-  };
 
   const handleUpdateStock = async (productId: string, nextQty: number) => {
     try {
@@ -188,7 +184,14 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                   <span className="font-semibold">Role:</span>
                   <Badge className="capitalize">{user?.role || 'unknown'}</Badge>
                 </div>
-                <Button variant="outline" onClick={onLogout} className="w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onLogout();
+                    navigate("/login");
+                  }}
+                  className="w-full"
+                >
                   Logout
                 </Button>
               </CardContent>
