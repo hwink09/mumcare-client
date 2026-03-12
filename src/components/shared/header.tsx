@@ -157,7 +157,7 @@ export function Header({
                     Login
                   </Button>
                   <Button size="sm" onClick={onRegisterClick}>Register</Button>
-                  <Button variant="outline" size="sm" onClick={() => onNavigate("staff-login")}>Staff</Button>
+                  <Button variant="ghost" size="sm" onClick={() => onNavigate("staff-login")}>Staff login</Button>
                 </>
               )}
             </div>

@@ -43,23 +43,21 @@ export function LoginPage({
 
     try {
       const result = await loginUser({ email, password });
-      console.log("Login successful:", result);
-      console.log("stored token", localStorage.getItem('accessToken'));
-
-      // Call onLoginSuccess to update user state
+      // Cập nhật user state nếu có
       if (onLoginSuccess) {
-        // loginUser bây giờ luôn trả về user object
         await onLoginSuccess(result as any);
       }
-
-      // close modal if requested
       if (onClose) {
         onClose();
       }
 
-      // Redirect after login (default to home)
-      if (redirectPath) {
-        navigate(redirectPath);
+      // Điều hướng dựa trên role
+      if (result && result.role === "staff") {
+        navigate("/staff");
+      } else if (result && result.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/"); // HomePage cho client hoặc role khác
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -80,7 +78,8 @@ export function LoginPage({
             <button className="px-6 py-2 bg-white text-black font-medium rounded-full border-2 border-gray-300">
               Login
             </button>
-            {showRegister && (
+            {/* Chỉ cho phép đăng ký nếu không phải staff/admin */}
+            {showRegister && (!email || (!email.endsWith("@gmail.com") && !email.endsWith("@admin.com"))) && (
               <button
                 onClick={onSwitchToRegister}
                 className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"

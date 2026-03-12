@@ -160,17 +160,39 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+          <div className="flex-1">
             <h1 className="text-3xl font-bold">Staff Operations</h1>
             <p className="text-muted-foreground">Use this dashboard to manage orders, inventory and customer requests.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Logged in as</span>
-            <Badge>{user?.email || "unknown"}</Badge>
-            <Button variant="outline" onClick={onLogout}>
-              Logout
-            </Button>
+
+          <div className="w-full sm:w-72">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  <span className="font-semibold">Name:</span>{' '}
+                  {user?.firstName || 'Unknown'} {user?.lastName || ''}
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Email:</span> {user?.email || 'Unknown'}
+                </div>
+                {user?.phone && (
+                  <div className="text-sm">
+                    <span className="font-semibold">Phone:</span> {user.phone}
+                  </div>
+                )}
+                <div className="text-sm flex items-center gap-2">
+                  <span className="font-semibold">Role:</span>
+                  <Badge className="capitalize">{user?.role || 'unknown'}</Badge>
+                </div>
+                <Button variant="outline" onClick={onLogout} className="w-full">
+                  Logout
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
