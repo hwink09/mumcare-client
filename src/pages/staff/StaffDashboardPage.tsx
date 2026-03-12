@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { getAllOrders, updateOrderStatus } from "@/services/orderService";
-import { getProducts, updateProduct } from "@/services/productService";
+import { getProducts } from "@/services/productService";
 
 type StaffDashboardProps = {
   user?: CurrentUser | null;
@@ -138,15 +138,6 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   };
 
 
-  const handleUpdateStock = async (productId: string, nextQty: number) => {
-    try {
-      await updateProduct(productId, { quantity: nextQty });
-      await loadProducts();
-    } catch (error) {
-      console.error(error);
-      setProductsError("Failed to update stock. Please try again.");
-    }
-  };
 
   const activeTabClasses = (tab: "orders" | "inventory" | "support") =>
     activeTab === tab
@@ -302,25 +293,9 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
-                          <input
-                            type="number"
-                            min={0}
-                            value={product.quantity}
-                            onChange={(e) => {
-                              const nextQty = Number(e.target.value);
-                              setProducts((prev) =>
-                                prev.map((p) => (p._id === product._id ? { ...p, quantity: nextQty } : p))
-                              );
-                            }}
-                            className="w-24 border rounded px-3 py-2"
-                          />
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleUpdateStock(product._id, product.quantity)}
-                          >
-                            Update
-                          </Button>
+                          <div className="w-24 text-sm text-muted-foreground text-right">
+                            In stock: {product.quantity}
+                          </div>
                         </div>
                       </div>
                     ))}
