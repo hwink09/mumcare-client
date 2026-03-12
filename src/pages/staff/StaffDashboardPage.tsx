@@ -141,39 +141,55 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
 
   const activeTabClasses = (tab: "orders" | "inventory" | "support") =>
     activeTab === tab
-      ? "bg-primary text-white"
-      : "bg-white text-foreground border border-gray-200 hover:bg-gray-50";
+      ? "bg-slate-900 text-white shadow"
+      : "bg-white/80 text-foreground border border-transparent hover:bg-white";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 text-slate-900">
       <div className="container mx-auto px-4 py-10">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">Staff Operations</h1>
-            <p className="text-muted-foreground">Use this dashboard to manage orders, inventory and customer requests.</p>
+            <div className="inline-flex items-center gap-3 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-pink-600 shadow-sm">
+              Staff Workspace
+            </div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight">Staff Operations</h1>
+            <p className="mt-3 text-base text-muted-foreground max-w-xl">
+              Track and action customer orders, monitor inventory levels, and respond to support requests from one place.
+            </p>
           </div>
 
-          <div className="w-full sm:w-72">
-            <Card>
-              <CardHeader>
+          <div className="w-full">
+            <Card className="border-0 shadow-lg shadow-pink-100/50">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-base">Profile</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm">
-                  <span className="font-semibold">Name:</span>{' '}
-                  {user?.firstName || 'Unknown'} {user?.lastName || ''}
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold">Email:</span> {user?.email || 'Unknown'}
-                </div>
-                {user?.phone && (
-                  <div className="text-sm">
-                    <span className="font-semibold">Phone:</span> {user.phone}
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 text-white flex items-center justify-center font-semibold">
+                    {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
                   </div>
-                )}
-                <div className="text-sm flex items-center gap-2">
-                  <span className="font-semibold">Role:</span>
-                  <Badge className="capitalize">{user?.role || 'unknown'}</Badge>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Welcome back</div>
+                    <div className="font-semibold text-lg">
+                      {user?.firstName || 'Unknown'} {user?.lastName || ''}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-right">{user?.email || 'Unknown'}</span>
+                  </div>
+                  {user?.phone && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">Phone</span>
+                      <span className="font-medium">{user.phone}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">Role</span>
+                    <Badge className="capitalize" variant="secondary">{user?.role || 'unknown'}</Badge>
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -190,7 +206,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <div className="flex flex-wrap gap-3 rounded-2xl bg-white/70 p-3 shadow-sm w-fit">
           <Button className={activeTabClasses("orders")} onClick={() => setActiveTab("orders")}>Orders</Button>
           <Button className={activeTabClasses("inventory")} onClick={() => setActiveTab("inventory")}>Inventory</Button>
           <Button className={activeTabClasses("support")} onClick={() => setActiveTab("support")}>Support</Button>
@@ -198,11 +214,11 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
 
         <div className="space-y-4">
           {activeTab === "orders" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Order queue</CardTitle>
+            <Card className="border-0 shadow-lg shadow-slate-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Order queue</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {ordersLoading ? (
                   <div className="py-12 text-center text-muted-foreground">Loading orders...</div>
                 ) : ordersError ? (
@@ -211,13 +227,13 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                   <div className="py-12 text-center text-muted-foreground">No orders found.</div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
                       <div className="text-sm text-muted-foreground">
                         Showing {showCanceledOrders ? "all" : "active"} orders ({orders.length})
                       </div>
                       <button
                         type="button"
-                        className="text-sm text-primary underline hover:text-primary/80"
+                        className="text-sm font-medium text-slate-700 hover:text-slate-900"
                         onClick={() => setShowCanceledOrders((prev) => !prev)}
                       >
                         {showCanceledOrders ? "Hide" : "Show"} canceled orders
@@ -227,7 +243,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                     {(showCanceledOrders ? orders : orders.filter((o) => o.status !== "canceled")).map((order) => {
                       const next = getNextStatus(order.status);
                       return (
-                        <div key={order._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg bg-white">
+                        <div key={order._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                           <div className="flex-1">
                             <div className="flex flex-wrap gap-2 items-center">
                               <span className="font-semibold">{order.orderCode || order._id}</span>
@@ -235,7 +251,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                                 {ORDER_STATUS_LABEL[order.status] || order.status}
                               </Badge>
                             </div>
-                            <div className="text-sm text-muted-foreground mt-2">
+                            <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
                               <div>Address: {order.address || "-"}</div>
                               <div>Items: {order.products?.reduce((s, i) => s + i.count, 0) || 0}</div>
                               <div>Ordered: {order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}</div>
@@ -271,11 +287,14 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           )}
 
           {activeTab === "inventory" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Inventory management</CardTitle>
+            <Card className="border-0 shadow-lg shadow-slate-100">
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-lg">Inventory management</CardTitle>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Read only</span>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {productsLoading ? (
                   <div className="py-12 text-center text-muted-foreground">Loading inventory...</div>
                 ) : productsError ? (
@@ -283,19 +302,20 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                 ) : products.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground">No products found.</div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {products.map((product) => (
-                      <div key={product._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg bg-white">
-                        <div className="flex-1">
-                          <div className="font-semibold">{product.title}</div>
-                          <div className="text-sm text-muted-foreground mt-1">
+                      <div key={product._id} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                        <div>
+                          <div className="font-semibold text-base">{product.title}</div>
+                          <div className="mt-2 text-sm text-muted-foreground">
                             Current Stock: {product.quantity} • Sold: {product.sold}
                           </div>
                         </div>
-                        <div className="flex gap-2 items-center">
-                          <div className="w-24 text-sm text-muted-foreground text-right">
-                            In stock: {product.quantity}
-                          </div>
+                        <div className="mt-4 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Available</span>
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 font-medium">
+                            {product.quantity}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -306,17 +326,17 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           )}
 
           {activeTab === "support" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer support</CardTitle>
+            <Card className="border-0 shadow-lg shadow-slate-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Customer support</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
                   Use this tab to handle cancellations, refunds and customer issues.
                 </p>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="bg-gray-50">
+                  <Card className="border border-slate-100 bg-white">
                     <CardHeader>
                       <CardTitle className="text-base">Refund / Cancel</CardTitle>
                     </CardHeader>
@@ -328,7 +348,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gray-50">
+                  <Card className="border border-slate-100 bg-white">
                     <CardHeader>
                       <CardTitle className="text-base">Issue notes</CardTitle>
                     </CardHeader>
@@ -340,7 +360,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                         value={orderNote}
                         onChange={(e) => setOrderNote(e.target.value)}
                         placeholder="Add a quick note for the order..."
-                        className="w-full border rounded px-3 py-2 h-28 resize-none"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 h-28 resize-none focus:outline-none focus:ring-2 focus:ring-slate-200"
                       />
                       <div className="flex gap-2">
                         <Button
