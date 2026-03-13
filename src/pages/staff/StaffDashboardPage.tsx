@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { CurrentUser } from "@/hooks/useAuth";
-import { getAllOrders, updateOrderStatus } from "@/services/orderService";
-import { getProducts } from "@/services/productService";
+import { getAllOrders, updateOrderStatus, deleteOrder } from "@/services/orderService";
+import { getProducts, updateProduct, deleteProduct } from "@/services/productService";
 
 type StaffDashboardProps = {
   user?: CurrentUser | null;
@@ -55,6 +55,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   const [orderNote, setOrderNote] = useState<string>("");
 
   const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
+  const isAdmin = useMemo(() => user?.role === "admin", [user]);
 
   useEffect(() => {
     if (!user) {
@@ -137,7 +138,45 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
     await handleStatusUpdate(orderId, "canceled");
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm("Delete this order permanently?")) return;
+    try {
+      await deleteOrder(orderId);
+      await loadOrders();
+    } catch (error) {
+      console.error(error);
+      setOrdersError("Failed to delete order. Please try again.");
+    }
+  };
 
+  const handleEditProductQuantity = async (productId: string, currentQty: number) => {
+    const input = window.prompt("Enter new stock quantity:", String(currentQty));
+    if (!input) return;
+    const newQty = Number(input);
+    if (Number.isNaN(newQty) || newQty < 0) {
+      window.alert("Please enter a valid non-negative number.");
+      return;
+    }
+
+    try {
+      await updateProduct(productId, { quantity: newQty });
+      await loadProducts();
+    } catch (error) {
+      console.error(error);
+      setProductsError("Failed to update product. Please try again.");
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!window.confirm("Delete this product permanently?")) return;
+    try {
+      await deleteProduct(productId);
+      await loadProducts();
+    } catch (error) {
+      console.error(error);
+      setProductsError("Failed to delete product. Please try again.");
+    }
+  };
 
   const activeTabClasses = (tab: "orders" | "inventory" | "support") =>
     activeTab === tab
@@ -258,14 +297,33 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                             </div>
                           </div>
                           <div className="flex flex-col sm:flex-row gap-2">
-                            {next && (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => handleStatusUpdate(order._id, next)}
-                              >
-                                Mark as {ORDER_STATUS_LABEL[next] || next}
-                              </Button>
+                            {isAdmin ? (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={order.status}
+                                  onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                >
+                                  {Object.entries(ORDER_STATUS_LABEL).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                      {label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
+                                  Delete
+                                </Button>
+                              </div>
+                            ) : (
+                              next && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleStatusUpdate(order._id, next)}
+                                >
+                                  Mark as {ORDER_STATUS_LABEL[next] || next}
+                                </Button>
+                              )
                             )}
                             <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order._id)}>
                               Cancel
@@ -291,7 +349,9 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
               <CardHeader className="pb-2">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle className="text-lg">Inventory management</CardTitle>
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Read only</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    {isAdmin ? "Admin controls" : "Read only"}
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -317,6 +377,24 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                             {product.quantity}
                           </span>
                         </div>
+                        {isAdmin && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditProductQuantity(product._id, product.quantity)}
+                            >
+                              Edit stock
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteProduct(product._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

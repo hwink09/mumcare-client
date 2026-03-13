@@ -138,6 +138,81 @@ const authService = {
     return data.data || data;
   },
 
+  getUsers: async (query?: {
+    role?: string;
+    isBlocked?: boolean;
+    email?: string;
+    phone?: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }) => {
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = new URL(`${API_BASE_URL}/users`);
+    if (query?.role) url.searchParams.set('role', query.role);
+    if (query?.isBlocked !== undefined) url.searchParams.set('isBlocked', String(query.isBlocked));
+    if (query?.email) url.searchParams.set('email', query.email);
+    if (query?.phone) url.searchParams.set('phone', query.phone);
+    if (query?.page) url.searchParams.set('page', String(query.page));
+    if (query?.limit) url.searchParams.set('limit', String(query.limit));
+    if (query?.sort) url.searchParams.set('sort', query.sort);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to fetch users');
+
+    return data.data || data;
+  },
+
+  updateUserByAdmin: async (userId: string, payload: Record<string, unknown>) => {
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(userId)}`, {
+      method: 'PUT',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to update user');
+
+    return data.data || data;
+  },
+
+  deleteUser: async (userId: string) => {
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      headers,
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to delete user');
+
+    return data.data || data;
+  },
+
   forgotPassword: async (email: string) => {
     const response = await fetch(`${API_BASE_URL}/users/auth/forgot-password`, {
       method: 'POST',
@@ -175,6 +250,9 @@ export const loginUser = authService.login;
 export const logoutUser = authService.logout;
 export const getCurrentUser = authService.getMe;
 export const updateProfile = authService.updateProfile;
+export const getUsers = authService.getUsers;
+export const updateUserByAdmin = authService.updateUserByAdmin;
+export const deleteUser = authService.deleteUser;
 
 // Refresh Access Token
 export const refreshAccessToken = async () => {

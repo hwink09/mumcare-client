@@ -90,6 +90,18 @@ const orderService = {
     if (!response.ok) throw new Error(data?.message || 'Failed to update order');
     return data.data || data;
   },
+
+  delete: async (orderId: string) => {
+    const response = await fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to delete order');
+    return data.data || data;
+  },
 };
 
 export default orderService;
@@ -100,3 +112,4 @@ export const getMyOrders = orderService.getMyOrders;
 export const getOrderById = orderService.getById;
 export const getAllOrders = orderService.getAll;
 export const updateOrderStatus = orderService.updateStatus;
+export const deleteOrder = orderService.delete;

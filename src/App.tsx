@@ -1,9 +1,13 @@
+import AdminOrderManagementPage from "@/pages/admin/AdminOrderManagementPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useAuth, useCart } from "@/hooks/useAuth";
 import { MainLayout } from "@/layouts/MainLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { StaffDashboardPage } from "@/pages/staff/StaffDashboardPage";
+import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminUserManagementPage } from "@/pages/admin/AdminUserManagementPage";
+import { AdminProductManagementPage } from "@/pages/admin/AdminProductManagementPage";
 import { BlogDetailPage } from "@/pages/blogs/BlogDetailPage";
 import { BlogListPage } from "@/pages/blogs/BlogListPage";
 import { AboutPage } from "@/pages/About";
@@ -41,6 +45,46 @@ function App() {
               onLogout={auth.onLogout}
             />
           }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminDashboardPage
+              user={auth.user}
+              onLogout={auth.onLogout}
+            />
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminDashboardPage
+              user={auth.user}
+              onLogout={auth.onLogout}
+            />
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminUserManagementPage
+              user={auth.user}
+              onLogout={auth.onLogout}
+            />
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <AdminProductManagementPage
+              user={auth.user}
+              onLogout={auth.onLogout}
+            />
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={<AdminOrderManagementPage />}
         />
         <Route
           path="/register"

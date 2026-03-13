@@ -16,8 +16,8 @@ export function LoyaltyPage() {
     (async () => {
       try {
         const res = await getCurrentUser();
-        const user = res?.data || res?.user || res;
-        if (mounted) setPoints(Number(user?.loyaltyPoint || 0));
+        const user = res || {};
+        if (mounted) setPoints(Number((user as any)?.loyaltyPoint || 0));
       } catch {
         if (mounted) setPoints(0);
       } finally {

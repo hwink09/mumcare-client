@@ -88,6 +88,19 @@ const productService = {
     return data.data || data;
   },
 
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || 'Failed to delete product');
+
+    return data.data || data;
+  },
+
   getCategories: async () => {
     const response = await fetch(`${API_BASE_URL}/product-categories`, {
       method: 'GET',
@@ -109,3 +122,4 @@ export const getProductById = productService.getById;
 export const addRating = productService.addRating;
 export const getCategories = productService.getCategories;
 export const updateProduct = productService.update;
+export const deleteProduct = productService.delete;
