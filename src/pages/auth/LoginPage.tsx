@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loginUser } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
@@ -69,6 +69,14 @@ export function LoginPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <button 
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 bg-white/50 hover:bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm transition font-medium shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Home
+      </button>
+      
       <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
         {/* Header */}
         <div className="mb-6">

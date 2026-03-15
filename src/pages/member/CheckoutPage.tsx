@@ -5,25 +5,66 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createOrder } from "@/services/orderService";
 import type { CartItem } from "@/hooks/useAuth";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
+import couponService from "@/services/couponService";
 
 interface CheckoutPageProps {
     isLoggedIn: boolean;
     cartItems: CartItem[];
+    clearCart: () => void;
 }
 
-export function CheckoutPage({ isLoggedIn, cartItems }: CheckoutPageProps) {
+export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageProps) {
     const navigate = useNavigate();
     const [address, setAddress] = useState("");
     const [couponCode, setCouponCode] = useState("");
     const [loading, setLoading] = useState(false);
+    const [validatingCoupon, setValidatingCoupon] = useState(false);
+    const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const subtotal = useMemo(() => {
+        return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    }, [cartItems]);
 
     // Cho phép địa chỉ ngắn hơn (>= 3 ký tự) để dễ test hơn
     const canSubmit = useMemo(
         () => isLoggedIn && address.trim().length >= 3,
         [isLoggedIn, address]
     );
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) {
+            setCouponMessage({ type: 'error', text: "Please enter a voucher code" });
+            return;
+        }
+
+        setValidatingCoupon(true);
+        setCouponMessage(null);
+
+        try {
+            const data: any = await couponService.getMyCoupons();
+            const coupons = data.data || data;
+            const found = (coupons || []).find((c: any) => c.name === couponCode.trim());
+
+            if (!found) {
+                setCouponMessage({ type: 'error', text: "Voucher not found or not applicable." });
+                return;
+            }
+
+            if (found.isExpired) {
+                setCouponMessage({ type: 'error', text: "This voucher has expired." });
+                return;
+            }
+
+            const discount = Math.floor((subtotal * found.discount) / 100);
+            setCouponMessage({ type: 'success', text: `Voucher applied! You will save $${discount.toFixed(2)} (${found.discount}% off).` });
+        } catch (err: any) {
+            setCouponMessage({ type: 'error', text: err.message || "Failed to validate voucher." });
+        } finally {
+            setValidatingCoupon(false);
+        }
+    };
 
     const handleCheckout = async () => {
         try {
@@ -56,22 +97,26 @@ export function CheckoutPage({ isLoggedIn, cartItems }: CheckoutPageProps) {
                 for (const item of validItems) {
                     await addToCartApi(item.id, item.quantity);
                 }
-            } catch {
-                // Nếu sync cart lỗi, vẫn cho user thấy thông báo rõ ràng
-                setError("Failed to sync cart with server. Please try again.");
+            } catch (err: any) {
+                // Hiển thị thông báo thật từ DB (ví dụ: hết hàng) thay vì giấu đi
+                setError(err.message || "Failed to sync cart with server. Please try again.");
                 return;
             }
 
-            // Backend orderValidation hiện tại chỉ cho phép field "address",
-            // nên không gửi couponCode trong body để tránh lỗi 422.
-            const res = await createOrder({
+            const payload: { address: string; couponCode?: string } = {
                 address: address.trim(),
-            });
+            };
+            if (couponCode.trim()) {
+                payload.couponCode = couponCode.trim();
+            }
+
+            const res = await createOrder(payload);
 
             setMessage(res?.message || "Order created successfully");
+            clearCart();
             setTimeout(() => navigate("/orders"), 800);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Checkout failed");
+        } catch (e: any) {
+            setError(e.message || "Checkout failed");
         } finally {
             setLoading(false);
         }
@@ -100,7 +145,7 @@ export function CheckoutPage({ isLoggedIn, cartItems }: CheckoutPageProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Shipping Address</label>
                             <textarea
-                                className="w-full min-h-28 rounded-md border px-3 py-2 text-sm"
+                                className="w-full min-h-28 rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
                                 placeholder="Enter full address (street, ward, district, city...)"
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
@@ -109,18 +154,35 @@ export function CheckoutPage({ isLoggedIn, cartItems }: CheckoutPageProps) {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Voucher Code (optional)</label>
-                            <input
-                                className="w-full h-10 rounded-md border px-3 text-sm"
-                                placeholder="Ex: SUMMER10"
-                                value={couponCode}
-                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    className="flex-1 h-10 rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all uppercase"
+                                    placeholder="Ex: SUMMER10"
+                                    value={couponCode}
+                                    onChange={(e) => {
+                                        setCouponCode(e.target.value.toUpperCase());
+                                        setCouponMessage(null); // clear message when user types
+                                    }}
+                                />
+                                <Button 
+                                    variant="secondary" 
+                                    onClick={handleApplyCoupon}
+                                    disabled={validatingCoupon || !couponCode.trim()}
+                                >
+                                    {validatingCoupon ? "Checking..." : "Apply"}
+                                </Button>
+                            </div>
+                            {couponMessage && (
+                                <p className={`text-sm mt-1 ${couponMessage.type === 'success' ? 'text-emerald-600 font-medium' : 'text-rose-600'}`}>
+                                    {couponMessage.text}
+                                </p>
+                            )}
                         </div>
 
-                        <div className="flex gap-3">
-                            <Button variant="outline" onClick={() => navigate("/cart")}>Back to Cart</Button>
-                            <Button disabled={!canSubmit || loading} onClick={handleCheckout}>
-                                {loading ? "Creating Order..." : "Place Order"}
+                        <div className="flex gap-3 pt-4 border-t border-slate-100">
+                            <Button variant="outline" onClick={() => navigate("/cart")} className="flex-1">Back to Cart</Button>
+                            <Button disabled={!canSubmit || loading} onClick={handleCheckout} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white">
+                                {loading ? "Processing..." : "Place Order"}
                             </Button>
                         </div>
                     </CardContent>

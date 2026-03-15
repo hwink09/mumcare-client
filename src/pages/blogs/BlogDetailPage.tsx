@@ -49,7 +49,7 @@ export function BlogDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10 max-w-4xl">
-        <Button variant="outline" onClick={() => navigate("/blogs")} className="mb-6">Back to Articles</Button>
+        <Button variant="outline" onClick={() => navigate("/blogs")} className="mb-6">Back to Blogs</Button>
 
         {error && <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
 

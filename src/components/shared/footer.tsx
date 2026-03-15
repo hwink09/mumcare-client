@@ -36,8 +36,8 @@ export default function Footer({ setCurrentPage }: FooterProps) {
                 </button>
               </li>
               <li>
-                <button onClick={() => setCurrentPage("articles")} className="hover:text-white">
-                  Health Tips
+                <button onClick={() => setCurrentPage("blogs")} className="hover:text-white">
+                  Blogs
                 </button>
               </li>
               <li>

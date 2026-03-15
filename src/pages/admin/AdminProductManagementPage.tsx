@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CurrentUser } from "@/hooks/useAuth";
-import { deleteProduct, getProducts, updateProduct } from "@/services/productService";
+import { deleteProduct, getProducts } from "@/services/productService";
 
 type AdminProductManagementPageProps = {
   user?: CurrentUser | null;
   onLogout: () => void;
+  isEmbedded?: boolean;
 };
 
 type ProductRow = {
@@ -17,16 +18,14 @@ type ProductRow = {
   price: number;
   quantity: number;
   sold: number;
-  status: string;
   categoryId?: string;
 };
 
-export function AdminProductManagementPage({ user, onLogout }: AdminProductManagementPageProps) {
+export function AdminProductManagementPage({ user, onLogout, isEmbedded }: AdminProductManagementPageProps) {
   const navigate = useNavigate();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("");
 
   const isAdmin = useMemo(() => user?.role === "admin", [user]);
 
@@ -46,7 +45,6 @@ export function AdminProductManagementPage({ user, onLogout }: AdminProductManag
     setLoading(true);
     try {
       const data = await getProducts({
-        status: filterStatus || undefined,
         limit: 100,
       });
       setProducts(Array.isArray(data) ? data : data || []);
@@ -59,41 +57,7 @@ export function AdminProductManagementPage({ user, onLogout }: AdminProductManag
 
   useEffect(() => {
     if (isAdmin) loadProducts();
-  }, [isAdmin, filterStatus]);
-
-  const handleEditQuantity = async (productId: string, currentQty: number) => {
-    const input = window.prompt("Enter new stock quantity:", String(currentQty));
-    if (!input) return;
-    const newQty = Number(input);
-    if (Number.isNaN(newQty) || newQty < 0) {
-      window.alert("Please enter a valid non-negative number.");
-      return;
-    }
-
-    try {
-      await updateProduct(productId, { quantity: newQty });
-      await loadProducts();
-    } catch (err: any) {
-      setError(err?.message || "Failed to update product");
-    }
-  };
-
-  const handleEditPrice = async (productId: string, currentPrice: number) => {
-    const input = window.prompt("Enter new price:", String(currentPrice));
-    if (!input) return;
-    const newPrice = Number(input);
-    if (Number.isNaN(newPrice) || newPrice < 0) {
-      window.alert("Please enter a valid non-negative number.");
-      return;
-    }
-
-    try {
-      await updateProduct(productId, { price: newPrice });
-      await loadProducts();
-    } catch (err: any) {
-      setError(err?.message || "Failed to update product");
-    }
-  };
+  }, [isAdmin]);
 
   const handleDelete = async (productId: string) => {
     if (!window.confirm("Permanently delete this product?")) return;
@@ -104,6 +68,90 @@ export function AdminProductManagementPage({ user, onLogout }: AdminProductManag
       setError(err?.message || "Failed to delete product");
     }
   };
+
+  const content = (
+    <Card className="border-0 shadow-lg shadow-slate-100">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Products</CardTitle>
+          <Button onClick={() => navigate('/admin/products/create')}>
+            Create Product
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
+          <div className="flex flex-wrap gap-2">
+          </div>
+          <Button variant="outline" onClick={loadProducts}>
+            Refresh
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-muted-foreground">Loading products...</div>
+        ) : error ? (
+          <div className="py-12 text-center text-red-600">{error}</div>
+        ) : products.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">No products found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Title
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Price
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Stock
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Sold
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {products.map((p) => (
+                  <tr key={p._id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm text-slate-700">{p.title}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">₫{p.price?.toLocaleString() || 0}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{p.quantity}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{p.sold}</td>
+                    <td className="px-4 py-3 text-right text-sm">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/admin/products/edit/${p._id}`)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(p._id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (isEmbedded) return <>{content}</>;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
@@ -164,104 +212,7 @@ export function AdminProductManagementPage({ user, onLogout }: AdminProductManag
           </Card>
         </div>
 
-        <Card className="border-0 shadow-lg shadow-slate-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
-              <div className="flex flex-wrap gap-2">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  <option value="">All products</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <Button variant="outline" onClick={loadProducts}>
-                Refresh
-              </Button>
-            </div>
-
-            {loading ? (
-              <div className="py-12 text-center text-muted-foreground">Loading products...</div>
-            ) : error ? (
-              <div className="py-12 text-center text-red-600">{error}</div>
-            ) : products.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">No products found.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Title
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Price
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Stock
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Sold
-                      </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Status
-                      </th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {products.map((p) => (
-                      <tr key={p._id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-sm text-slate-700">{p.title}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">${p.price}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{p.quantity}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{p.sold}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <Badge variant={p.status === "active" ? "secondary" : "destructive"}>
-                            {p.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditPrice(p._id, p.price)}
-                            >
-                              Edit Price
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditQuantity(p._id, p.quantity)}
-                            >
-                              Edit Stock
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(p._id)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {content}
       </div>
     </div>
   );
