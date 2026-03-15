@@ -60,13 +60,13 @@ export function Header({
           <Button
             variant="ghost"
             onClick={() => onNavigate("home")}
-            className={cn("flex items-center gap-3 flex-shrink-0 h-auto p-0 hover:bg-transparent")}
+            className={cn("flex items-center gap-3 shrink-0 h-auto p-0 hover:bg-transparent")}
           >
-            <div className="bg-gradient-to-br from-pink-500 to-blue-500 p-2 rounded-xl">
+            <div className="bg-linear-to-br from-pink-500 to-blue-500 p-2 rounded-xl">
               <Baby className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-linear-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">
                 MomCare Store
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -120,7 +120,7 @@ export function Header({
                       >
                         <div
                           className={cn(
-                            "w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-blue-500",
+                            "w-8 h-8 rounded-full bg-linear-to-br from-pink-500 to-blue-500",
                             "flex items-center justify-center text-white font-bold text-sm shrink-0"
                           )}
                         >

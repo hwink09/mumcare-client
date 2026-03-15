@@ -137,10 +137,11 @@ export function ProductListPage({
         }
 
         if (mounted) setProducts(items.length ? items : []);
-      } catch (e) {
+      } catch (error) {
         if (mounted) {
           setError("Failed to load products. Please try again.");
           setProducts([]);
+          console.log(error);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -153,7 +154,7 @@ export function ProductListPage({
   }, [pagination.page, pagination.limit, categoryId, search]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <Header
         cartItemCount={0}
         onCartClick={() => navigate("/cart")}

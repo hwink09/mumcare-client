@@ -205,7 +205,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
       : "bg-white text-slate-700 border hover:bg-slate-50";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
+    <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
       <div className="container mx-auto px-4 py-10 relative">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
           <div>
@@ -224,7 +224,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
+                <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
                   {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div>
@@ -274,12 +274,12 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             {stats[activeTab].map((stat) => (
               <Card key={stat.label} className="border-0 shadow-lg shadow-slate-100 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-white/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-linear-to-br from-indigo-50/50 to-white/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardContent className="pt-6 relative z-10">
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     {stat.label}
                   </div>
-                  <div className="text-3xl font-bold mt-2 mb-1 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  <div className="text-3xl font-bold mt-2 mb-1 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                     {stat.value}
                   </div>
                   <div className="text-xs text-muted-foreground">{stat.caption}</div>
@@ -318,7 +318,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
                       onChange={(e) =>
                         handleStatusUpdate(order._id, e.target.value)
                       }
-                      className="border rounded px-3 py-1.5 min-w-[120px] bg-slate-50 text-sm font-medium"
+                      className="border rounded px-3 py-1.5 min-w-30 bg-slate-50 text-sm font-medium"
                     >
                       {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
                         <option key={k} value={k}>{v}</option>

@@ -73,8 +73,8 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
   return (
     <div className="container max-w-3xl mx-auto px-4 py-8">
       <Card className="border-0 shadow-lg mt-8">
-        <CardHeader className="text-center rounded-t-xl bg-gradient-to-r from-pink-500/10 to-blue-500/10 border-b">
-          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-blue-600">
+        <CardHeader className="text-center rounded-t-xl bg-linear-to-r from-pink-500/10 to-blue-500/10 border-b">
+          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-pink-600 to-blue-600">
             Write a New Blog Post
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground mt-2">
@@ -137,7 +137,7 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
                   placeholder="Write your article here..."
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="min-h-[300px] resize-y"
+                  className="min-h-75 resize-y"
                   required
                 />
               </div>
@@ -154,7 +154,7 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 px-8"
+                  className="bg-linear-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 px-8"
                 >
                   {loading ? "Publishing..." : "Publish Post"}
                 </Button>

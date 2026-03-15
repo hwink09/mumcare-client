@@ -220,7 +220,7 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
       </form>
     );
   } else if (vouchers.length === 0) {
-    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click "Add Voucher" to create one.</div>;
+    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click &quot;Add Voucher&quot; to create one.</div>;
   } else {
     content = (
       <div className="overflow-x-auto">
@@ -238,7 +238,7 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
               const isExpired = new Date(v.expiry) < new Date();
               return (
                 <tr key={v._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-semibold text-slate-900 group relative truncate max-w-[150px]">
+                  <td className="py-3 px-4 font-semibold text-slate-900 group relative truncate max-w-37.5">
                     {v.name}
                     <button
                         className="ml-2 text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"

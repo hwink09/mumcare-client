@@ -92,14 +92,14 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
       )}
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-pink-50 via-purple-50 to-blue-50 py-16 md:py-24 overflow-hidden">
+      <section className="relative bg-linear-to-r from-pink-50 via-purple-50 to-blue-50 py-16 md:py-24 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <Badge className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 text-sm rounded-full">Trusted by 10,000+ Families</Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
                 Premium Nutrition <br className="hidden md:block"/> for{" "}
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-blue-600">
+                <span className="bg-clip-text text-transparent bg-linear-to-r from-pink-500 to-blue-600">
                   Mom & Baby
                 </span>
               </h1>
@@ -108,7 +108,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                 products backed by expert health advice.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <Button size="lg" className="bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white border-0 shadow-lg rounded-full px-8" onClick={() => onNavigate("products")}>
+                <Button size="lg" className="bg-linear-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white border-0 shadow-lg rounded-full px-8" onClick={() => onNavigate("products")}>
                   Shop Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -136,11 +136,11 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-3xl transform rotate-3 scale-105 opacity-50 blur-lg"></div>
+              <div className="absolute inset-0 bg-linear-to-br from-pink-200 to-blue-200 rounded-3xl transform rotate-3 scale-105 opacity-50 blur-lg"></div>
               <ImageWithFallback
                 src="https://images.unsplash.com/photo-1663028051021-07b4f67a6bd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYXBweSUyMHByZWduYW50JTIwd29tYW4lMjBzaG9wcGluZ3xlbnwxfHx8fDE3Njk2MDYzMTh8MA&ixlib=rb-4.1.0&q=80&w=1080"
                 alt="Happy family"
-                className="relative rounded-3xl shadow-2xl object-cover w-full aspect-[4/3]"
+                className="relative rounded-3xl shadow-2xl object-cover w-full aspect-4/3"
               />
             </div>
           </div>
@@ -236,9 +236,9 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                     ))}
                   </div>
                 </div>
-                <CardContent className="p-5 flex flex-col flex-grow">
+                <CardContent className="p-5 flex flex-col grow">
                   <h3 className="font-bold text-slate-800 text-lg mb-1 line-clamp-2">{product.name}</h3>
-                  <p className="text-slate-500 text-sm mb-4 line-clamp-2 flex-grow">
+                  <p className="text-slate-500 text-sm mb-4 line-clamp-2 grow">
                     {product.description}
                   </p>
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
@@ -258,7 +258,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
 
       {/* Loyalty Program CTA */}
       <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-600 to-blue-700"></div>
+        <div className="absolute inset-0 bg-linear-to-br from-pink-600 to-blue-700"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-2xl mx-auto flex flex-col items-center">

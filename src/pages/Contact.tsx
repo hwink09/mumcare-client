@@ -37,7 +37,7 @@ export function ContactPage({
   const [submitMessage, setSubmitMessage] = useState("");
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -52,7 +52,9 @@ export function ContactPage({
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSubmitMessage("Thank you for your message! We'll get back to you soon.");
+      setSubmitMessage(
+        "Thank you for your message! We'll get back to you soon.",
+      );
       setFormData({
         name: "",
         email: "",
@@ -62,6 +64,7 @@ export function ContactPage({
       });
       setTimeout(() => setSubmitMessage(""), 3000);
     } catch (error) {
+      console.log(error);
       setSubmitMessage("Error sending message. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -109,14 +112,14 @@ export function ContactPage({
       />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-pink-50 to-blue-50 py-12">
+      <section className="bg-linear-to-r from-pink-50 to-blue-50 py-12">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
             Get in Touch
           </h1>
-      <p className="text-center text-gray-600 max-w-2xl mx-auto">
-            Have questions about our products or services? We'd love to hear from
-            you. Contact us today and let's start a conversation!
+          <p className="text-center text-gray-600 max-w-2xl mx-auto">
+            Have questions about our products or services? We&apos;d love to
+            hear from you. Contact us today and let&apos;s start a conversation!
           </p>
         </div>
       </section>
@@ -128,10 +131,13 @@ export function ContactPage({
             {contactInfo.map((info, index) => {
               const IconComponent = info.icon;
               return (
-                <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+                <Card
+                  key={index}
+                  className="text-center hover:shadow-lg transition-shadow"
+                >
                   <CardContent className="pt-6">
                     <div className="flex justify-center mb-4">
-                      <div className="bg-gradient-to-br from-pink-100 to-blue-100 p-4 rounded-full">
+                      <div className="bg-linear-to-br from-pink-100 to-blue-100 p-4 rounded-full">
                         <IconComponent className="h-6 w-6 text-pink-600" />
                       </div>
                     </div>
@@ -243,7 +249,7 @@ export function ContactPage({
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-pink-600 to-blue-600 hover:from-pink-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
+                  className="w-full bg-linear-to-r from-pink-600 to-blue-600 hover:from-pink-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -269,13 +275,16 @@ export function ContactPage({
                     <div className="bg-gray-200 h-80 rounded-lg flex items-center justify-center mb-6">
                       <div className="text-center">
                         <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">Map integration coming soon</p>
+                        <p className="text-gray-500">
+                          Map integration coming soon
+                        </p>
                       </div>
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      Visit our physical store at FPT University, District 9, Ho Chi
-                      Minh City, Vietnam. Our friendly team is ready to assist you
-                      with product recommendations and any questions you may have.
+                      Visit our physical store at FPT University, District 9, Ho
+                      Chi Minh City, Vietnam. Our friendly team is ready to
+                      assist you with product recommendations and any questions
+                      you may have.
                     </p>
                   </CardContent>
                 </Card>
@@ -290,25 +299,19 @@ export function ContactPage({
                     <h4 className="font-semibold text-gray-800 mb-2">
                       Mày tên là gì?
                     </h4>
-                    <p className="text-sm text-gray-600">
-                       ....
-                    </p>
+                    <p className="text-sm text-gray-600">....</p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-2">
                       Nổ cái địa chỉ shop đi?
                     </h4>
-                    <p className="text-sm text-gray-600">
-                      ....
-                    </p>
+                    <p className="text-sm text-gray-600">....</p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-2">
                       Không đưa chém chết cụ m
                     </h4>
-                    <p className="text-sm text-gray-600">
-                     ....
-                    </p>
+                    <p className="text-sm text-gray-600">....</p>
                   </div>
                 </CardContent>
               </Card>

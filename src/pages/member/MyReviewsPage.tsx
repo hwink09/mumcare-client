@@ -96,7 +96,7 @@ export function MyReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 py-10">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 py-10">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -111,7 +111,7 @@ export function MyReviewsPage() {
         {reviews.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-lg font-medium mb-2">You haven't reviewed any products yet.</p>
+              <p className="text-lg font-medium mb-2">You haven&apos;t reviewed any products yet.</p>
               <p className="text-muted-foreground mb-6">Purchase products and leave your thoughts after delivery!</p>
               <Button onClick={() => navigate("/orders")}>Go to My Orders</Button>
             </CardContent>
@@ -133,7 +133,7 @@ export function MyReviewsPage() {
               return (
                 <Card key={idx} className="overflow-hidden">
                   <div className="flex flex-col sm:flex-row">
-                    <div className="w-full sm:w-32 h-32 bg-gray-100 flex-shrink-0 cursor-pointer" onClick={() => navigate(`/products/${p._id || p.id}`)}>
+                    <div className="w-full sm:w-32 h-32 bg-gray-100 shrink-0 cursor-pointer" onClick={() => navigate(`/products/${p._id || p.id}`)}>
                       <ImageWithFallback src={img} alt={p.title || p.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 p-5">

@@ -66,7 +66,7 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
   if (loading) return <div className="py-20 text-center">Loading product...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
         <Button variant="outline" onClick={() => navigate("/products")} className="mb-6">Back to products</Button>
 
@@ -77,7 +77,7 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
           <div className="text-center text-muted-foreground">Product not found</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="rounded-lg overflow-hidden bg-gray-100 h-[340px]">
+            <div className="rounded-lg overflow-hidden bg-gray-100 h-85">
               <img src={mainImage} alt={product.title || product.name} className="w-full h-full object-cover" />
             </div>
             <div>

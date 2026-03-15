@@ -76,6 +76,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
       const list = Array.isArray(res) ? res : (res as any).data || [];
       setOrders(list as OrderItem[]);
     } catch (error) {
+      console.log(error)
       setOrdersError("Failed to load orders. Please try again.");
     } finally {
       setOrdersLoading(false);
@@ -97,6 +98,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
         }))
       );
     } catch (error) {
+      console.log(error)
       setProductsError("Failed to load inventory. Please try again.");
     } finally {
       setProductsLoading(false);
@@ -186,7 +188,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
       : "bg-white/80 text-foreground border border-transparent hover:bg-white";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 text-slate-900">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 text-slate-900">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
           <div className="flex-1">
@@ -206,7 +208,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-500 to-blue-500 text-white flex items-center justify-center font-semibold">
+                  <div className="h-12 w-12 rounded-full bg-linear-to-br from-pink-500 to-blue-500 text-white flex items-center justify-center font-semibold">
                     {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
                   </div>
                   <div>

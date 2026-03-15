@@ -154,7 +154,7 @@ export function AdminProductManagementPage({ user, onLogout, isEmbedded }: Admin
   if (isEmbedded) return <>{content}</>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
+    <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
       <div className="container mx-auto px-4 py-10">
         <div className="mb-6">
           <Button variant="outline" onClick={() => navigate('/admin/dashboard')}>
@@ -178,7 +178,7 @@ export function AdminProductManagementPage({ user, onLogout, isEmbedded }: Admin
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
+                <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
                   {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div>

@@ -123,7 +123,7 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+        <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
             <div className="container mx-auto px-4 py-10 max-w-2xl">
                 <h1 className="text-3xl font-bold mb-2">Checkout</h1>
                 <p className="text-muted-foreground mb-6">Create order from your current cart.</p>

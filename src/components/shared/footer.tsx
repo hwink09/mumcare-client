@@ -75,15 +75,15 @@ export default function Footer({ setCurrentPage }: FooterProps) {
             <h4 className="font-semibold mb-4">Contact Us</h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-start gap-2">
-                <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <Phone className="h-4 w-4 mt-0.5 shrink-0" />
                 <span>+ 86231706 (24/7)</span>
               </li>
               <li className="flex items-start gap-2">
-                <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <Mail className="h-4 w-4 mt-0.5 shrink-0" />
                 <span>momcare@gmail.com</span>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
                 <span>FPT University, District 9, Ho Chi Minh City</span>
               </li>
             </ul>

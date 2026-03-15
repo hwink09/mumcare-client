@@ -31,7 +31,7 @@ export function LoyaltyPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <div>
