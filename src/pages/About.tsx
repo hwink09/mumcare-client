@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
-import "@/styles/about.css";
 
 interface AboutPageProps {
   onNavigate: (page: string) => void;

@@ -1,4 +1,4 @@
-import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X } from "lucide-react";
+import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X, PenTool, LayoutDashboard, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -11,7 +11,7 @@ interface HeaderProps {
   onLoginClick: () => void;
   onRegisterClick: () => void;
   isLoggedIn?: boolean;
-  user?: { firstName?: string; lastName?: string; email?: string };
+  user?: { firstName?: string; lastName?: string; email?: string; role?: string };
   onNavigate: (page: string) => void;
   onLogout?: () => void;
 }
@@ -35,7 +35,7 @@ export function Header({
   const navItems = [
     { label: "Home", value: "home" },
     { label: "Products", value: "products" },
-    { label: "Health Tips", value: "articles" },
+    { label: "Blogs", value: "blogs" },
     { label: "About Us", value: "about" },
     { label: "Contact", value: "contact" },
   ];
@@ -139,10 +139,27 @@ export function Header({
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       My Orders
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate("reviews")}>
+                      <Star className="h-4 w-4 mr-2" />
+                      My Reviews
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onNavigate("loyalty")}>
                       <Gift className="h-4 w-4 mr-2" />
                       Loyalty & Vouchers
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate("client_create_blog")}>
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Create Post / Blogs
+                    </DropdownMenuItem>
+                    {user?.role === "admin" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onNavigate("admin_dashboard")}>
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
@@ -252,6 +269,43 @@ export function Header({
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     My Orders
                   </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("reviews");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    My Reviews
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("client_create_blog");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <PenTool className="h-4 w-4 mr-2" />
+                    Create Post / Blogs
+                  </Button>
+                  {user?.role === "admin" && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start mb-2"
+                        onClick={() => {
+                          onNavigate("admin_dashboard");
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="ghost"
                     className="w-full justify-start mb-2"

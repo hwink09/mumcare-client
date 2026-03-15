@@ -59,7 +59,7 @@ export function BlogListPage() {
             <div className="container mx-auto px-4 py-10">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold">Health & Care Articles</h1>
+                        <h1 className="text-3xl font-bold">Health & Care Blogs</h1>
                         <p className="text-muted-foreground">Expert tips for mom and baby</p>
                     </div>
                     <Button variant="outline" onClick={() => navigate("/")}>Back Home</Button>

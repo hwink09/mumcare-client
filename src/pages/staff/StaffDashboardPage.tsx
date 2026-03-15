@@ -159,7 +159,9 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
     }
 
     try {
-      await updateProduct(productId, { quantity: newQty });
+      const formData = new FormData();
+      formData.append("quantity", newQty.toString());
+      await updateProduct(productId, formData);
       await loadProducts();
     } catch (error) {
       console.error(error);

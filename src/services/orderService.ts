@@ -1,76 +1,23 @@
-const API_BASE_URL = 'http://localhost:8017/v1';
-
-const getHeaders = (includeAuth = false) => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  if (includeAuth) {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
-  return headers;
-};
+import axiosInstance from '../utils/axios';
 
 const orderService = {
   create: async (payload: { address: string; couponCode?: string }) => {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
-      method: 'POST',
-      headers: getHeaders(true),
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to create order');
-
+    const data: any = await axiosInstance.post('/orders', payload);
     return data.data || data;
   },
 
   getMyOrders: async () => {
-    const response = await fetch(`${API_BASE_URL}/orders/me`, {
-      method: 'GET',
-      headers: getHeaders(true),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch orders');
-
+    const data: any = await axiosInstance.get('/orders/me');
     return data.data || data;
   },
 
   getAll: async (query?: { status?: string; page?: number; limit?: number }) => {
-    const url = new URL(`${API_BASE_URL}/orders`);
-    if (query?.status) url.searchParams.set('status', query.status);
-    if (query?.page) url.searchParams.set('page', String(query.page));
-    if (query?.limit) url.searchParams.set('limit', String(query.limit));
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: getHeaders(true),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch orders');
-
+    const data: any = await axiosInstance.get('/orders', { params: query });
     return data.data || data;
   },
 
   getById: async (orderId: string) => {
-    const response = await fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`, {
-      method: 'GET',
-      headers: getHeaders(true),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch order');
-
+    const data: any = await axiosInstance.get(`/orders/${encodeURIComponent(orderId)}`);
     return data.data || data;
   },
 
@@ -79,27 +26,12 @@ const orderService = {
     if (extra?.isRefunded !== undefined) payload.isRefunded = extra.isRefunded;
     if (extra?.supportNote !== undefined) payload.supportNote = extra.supportNote;
 
-    const response = await fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`, {
-      method: 'PUT',
-      headers: getHeaders(true),
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to update order');
+    const data: any = await axiosInstance.put(`/orders/${encodeURIComponent(orderId)}`, payload);
     return data.data || data;
   },
 
   delete: async (orderId: string) => {
-    const response = await fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`, {
-      method: 'DELETE',
-      headers: getHeaders(true),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to delete order');
+    const data: any = await axiosInstance.delete(`/orders/${encodeURIComponent(orderId)}`);
     return data.data || data;
   },
 };

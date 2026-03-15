@@ -72,16 +72,22 @@ export default function AdminOrderManagementPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-2 md:px-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-3xl font-bold mb-1">Order Management</h2>
-          <p className="text-muted-foreground">View, update, or delete all orders in the system.</p>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
+      <div className="container mx-auto px-4 py-10">
+        <div className="mb-6">
+          <Button variant="outline" onClick={() => navigate('/admin/dashboard')}>
+            ← Back to Dashboard
+          </Button>
         </div>
-        <Button variant="outline" onClick={() => navigate('/admin')}>
-          ← Quay về Dashboard
-        </Button>
-      </div>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-3 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 shadow-sm">
+            Admin Control Center
+          </div>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Order management</h1>
+          <p className="mt-3 text-base text-muted-foreground max-w-xl">
+            View, update, or delete all orders in the system.
+          </p>
+        </div>
       {loading && <div className="py-4 text-center text-muted-foreground">Loading orders...</div>}
       {error && <div className="py-4 text-center text-red-600">{error}</div>}
       {!loading && !error && !orders.length && (
@@ -134,6 +140,7 @@ export default function AdminOrderManagementPage() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

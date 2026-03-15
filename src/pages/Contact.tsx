@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { useState } from "react";
-import "@/styles/contact.css";
 
 interface ContactPageProps {
   onNavigate: (page: string) => void;
