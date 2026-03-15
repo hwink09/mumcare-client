@@ -23,7 +23,7 @@ export function LoginPage({
   onLoginSuccess,
   initialEmail = "",
   initialPassword = "",
-  title = "Welcome to MomCare Store",
+  title = "Welcome to MumCare Store",
   subtitle,
   showRegister = true,
 }: LoginPageProps) {

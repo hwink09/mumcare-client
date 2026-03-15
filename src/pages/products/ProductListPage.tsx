@@ -171,7 +171,7 @@ export function ProductListPage({
           <div>
             <h1 className="text-3xl font-bold">Products</h1>
             <p className="text-muted-foreground">
-              Browse products from MomCare Store
+              Browse products from MumCare Store
             </p>
           </div>
 
@@ -292,7 +292,7 @@ export function ProductListPage({
                               ? p.images[0]
                               : typeof p.images === "string" && p.images
                                 ? p.images
-                                : "https://placehold.co/600x400?text=MomCare"
+                                : "https://placehold.co/600x400?text=MumCare"
                         }
                         alt={p.title || p.name || "Product image"}
                         className="w-full h-full object-cover"

@@ -81,7 +81,7 @@ export function ContactPage({
     {
       icon: Mail,
       title: "Email",
-      content: "momcare@gmail.com",
+      content: "mumcare@gmail.com",
       subtext: "Response within 24 hours",
     },
     {

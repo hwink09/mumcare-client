@@ -62,7 +62,7 @@ function OrderProductItem({ item, isDelivered, userId }: { item: { productId: st
         ? product.images[0]
         : typeof product.images === "string" && product.images
           ? product.images
-          : "https://placehold.co/100x100?text=MomCare";
+          : "https://placehold.co/100x100?text=MumCare";
 
   const hasReviewed = product.ratings?.some((r: any) => r.postedBy === userId);
   const canReview = isDelivered && !submitted && !hasReviewed;

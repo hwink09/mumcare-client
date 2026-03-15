@@ -74,7 +74,7 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
 
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
+          <h2 className="text-2xl font-bold mb-4">Welcome to MumCare Store</h2>
 
           {/* Tabs */}
           <div className="flex gap-4">

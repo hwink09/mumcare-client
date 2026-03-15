@@ -128,7 +128,7 @@ export function MyReviewsPage() {
                     ? p.images[0]
                     : typeof p.images === "string" && p.images
                       ? p.images
-                      : "https://placehold.co/100x100?text=MomCare";
+                      : "https://placehold.co/100x100?text=MumCare";
               
               return (
                 <Card key={idx} className="overflow-hidden">

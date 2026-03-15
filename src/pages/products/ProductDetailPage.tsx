@@ -52,7 +52,7 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
     if (Array.isArray(imgs) && imgs.length) return imgs[0];
     if (typeof imgs === "string" && imgs) return imgs;
   
-    return "https://placehold.co/800x500?text=MomCare";
+    return "https://placehold.co/800x500?text=MumCare";
   }, [product]);
   
   const handleAddToCartClick = () => {
@@ -84,7 +84,7 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
               <h1 className="text-3xl font-bold mb-2">{product.title || product.name}</h1>
               <p className="text-muted-foreground mb-4">{product.description}</p>
               <div className="text-3xl font-bold text-primary mb-4">${Number(product.price || 0).toFixed(2)}</div>
-              <div className="text-sm text-muted-foreground mb-6">Brand: {product.brand || "MomCare"}</div>
+              <div className="text-sm text-muted-foreground mb-6">Brand: {product.brand || "MumCare"}</div>
 
               <div className="flex gap-3">
                 <Button onClick={handleAddToCartClick}>Add to cart</Button>

@@ -10,7 +10,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-bold text-lg mb-4">MomCare Store</h3>
+            <h3 className="font-bold text-lg mb-4">MumCare Store</h3>
             <p className="text-sm text-gray-400 mb-4">
               Premium nutrition and care products for mothers and babies.
             </p>
@@ -80,7 +80,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>momcare@gmail.com</span>
+                <span>mumcare@gmail.com</span>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
@@ -92,7 +92,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-sm text-gray-400">
-            © 2026 MomCare Store. All rights reserved. Made with{" "}
+            © 2026 MumCare Store. All rights reserved. Made with{" "}
             <Heart className="inline h-4 w-4 text-pink-500 fill-pink-500" /> for mothers and babies.
           </p>
         </div>

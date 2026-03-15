@@ -67,7 +67,7 @@ export function Header({
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold bg-linear-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">
-                MomCare Store
+                MumCare Store
               </h1>
               <p className="text-xs text-muted-foreground">
                 Care for Mom & Baby

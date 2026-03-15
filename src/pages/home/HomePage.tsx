@@ -100,7 +100,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
                 Premium Nutrition <br className="hidden md:block"/> for{" "}
                 <span className="bg-clip-text text-transparent bg-linear-to-r from-pink-500 to-blue-600">
-                  Mom & Baby
+                  Mum & Baby
                 </span>
               </h1>
               <p className="text-lg text-slate-600 md:max-w-lg leading-relaxed">
@@ -223,7 +223,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                           ? product.images[0]
                           : typeof product.images === "string" && product.images
                             ? product.images
-                            : "https://placehold.co/600x400?text=MomCare"
+                            : "https://placehold.co/600x400?text=MumCare"
                     }
                     alt={product.name ?? "Product"}
                     className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"

@@ -83,7 +83,7 @@ export function BlogListPage() {
                         {filteredBlogs.map((blog) => (
                             <Card key={blog._id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/blogs/${blog._id}`)}>
                                 <div className="h-44 bg-gray-100">
-                                    <img src={blog.image || "https://placehold.co/600x400?text=MomCare+Blog"} alt={blog.title} className="w-full h-full object-cover" />
+                                    <img src={blog.image || "https://placehold.co/600x400?text=MumCare+Blog"} alt={blog.title} className="w-full h-full object-cover" />
                                 </div>
                                 <CardContent className="pt-4">
                                     <h3 className="font-semibold line-clamp-2 mb-2">{blog.title}</h3>

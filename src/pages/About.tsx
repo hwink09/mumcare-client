@@ -54,7 +54,7 @@ export function AboutPage({
   ];
 
   const milestones = [
-    { year: "2020", event: "MomCare Store Founded" },
+    { year: "2020", event: "MumCare Store Founded" },
     { year: "2021", event: "First 1000 Happy Customers" },
     { year: "2022", event: "Expanded Product Range" },
     { year: "2023", event: "Launched Mobile App" },
@@ -112,7 +112,7 @@ export function AboutPage({
       {/* Hero Section */}
       <section className="bg-linear-to-r from-pink-50 via-purple-50 to-blue-50 py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">About MomCare Store</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">About MumCare Store</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Dedicated to providing premium nutrition and care products for mothers
             and babies since 2020. We believe every mother and baby deserves the best.
@@ -127,7 +127,7 @@ export function AboutPage({
             <div>
               <h2 className="text-4xl font-bold mb-6">Our Story</h2>
               <p className="text-gray-600 text-lg mb-4 leading-relaxed">
-                MomCare Store was founded in 2020 with a simple mission: to make
+                MumCare Store was founded in 2020 with a simple mission: to make
                 premium mother and baby care products accessible to everyone. Our
                 founder, Abc, started this journey after experiencing the
                 challenges of finding quality, trusted products during her pregnancy.
@@ -242,7 +242,7 @@ export function AboutPage({
       {/* Why Choose Us Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Why Choose MomCare</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">Why Choose MumCare</h2>
           <div className="max-w-4xl mx-auto">
             <div className="space-y-4">
               {[
@@ -270,7 +270,7 @@ export function AboutPage({
             Join Our Community
           </h2>
           <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-            Become part of thousands of happy mothers who trust MomCare for their
+            Become part of thousands of happy mothers who trust MumCare for their
             nutrition and baby care needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

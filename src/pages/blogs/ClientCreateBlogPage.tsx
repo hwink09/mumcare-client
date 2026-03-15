@@ -78,7 +78,7 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
             Write a New Blog Post
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground mt-2">
-            Share your thoughts, tips, and experiences with the MomCare community.
+            Share your thoughts, tips, and experiences with the MumCare community.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-8">
