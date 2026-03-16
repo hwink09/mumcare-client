@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getToken } from "@/utils/token";
 import type { Product } from "@/types/product";
 import { getCurrentUser, logoutUser } from "@/services/userService";
 
@@ -35,7 +36,7 @@ export function useAuth() {
 
   useEffect(() => {
     // Check if token exists in localStorage
-    const token = localStorage.getItem('accessToken');
+    const token = getToken();
     if (token) {
       // Token exists, try to load user data
       void loadMe();

@@ -55,11 +55,11 @@ export function BlogListPage() {
     const filteredBlogs = activeCategory ? blogs.filter((b) => b.categoryId === activeCategory) : blogs;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+        <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
             <div className="container mx-auto px-4 py-10">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold">Health & Care Articles</h1>
+                        <h1 className="text-3xl font-bold">Health & Care Blogs</h1>
                         <p className="text-muted-foreground">Expert tips for mom and baby</p>
                     </div>
                     <Button variant="outline" onClick={() => navigate("/")}>Back Home</Button>
@@ -83,7 +83,7 @@ export function BlogListPage() {
                         {filteredBlogs.map((blog) => (
                             <Card key={blog._id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/blogs/${blog._id}`)}>
                                 <div className="h-44 bg-gray-100">
-                                    <img src={blog.image || "https://placehold.co/600x400?text=MomCare+Blog"} alt={blog.title} className="w-full h-full object-cover" />
+                                    <img src={blog.image || "https://placehold.co/600x400?text=MumCare+Blog"} alt={blog.title} className="w-full h-full object-cover" />
                                 </div>
                                 <CardContent className="pt-4">
                                     <h3 className="font-semibold line-clamp-2 mb-2">{blog.title}</h3>

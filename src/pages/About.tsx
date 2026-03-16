@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
-import "@/styles/about.css";
 
 interface AboutPageProps {
   onNavigate: (page: string) => void;
@@ -55,7 +54,7 @@ export function AboutPage({
   ];
 
   const milestones = [
-    { year: "2020", event: "MomCare Store Founded" },
+    { year: "2020", event: "MumCare Store Founded" },
     { year: "2021", event: "First 1000 Happy Customers" },
     { year: "2022", event: "Expanded Product Range" },
     { year: "2023", event: "Launched Mobile App" },
@@ -111,9 +110,9 @@ export function AboutPage({
       />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-pink-50 via-purple-50 to-blue-50 py-16">
+      <section className="bg-linear-to-r from-pink-50 via-purple-50 to-blue-50 py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">About MomCare Store</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">About MumCare Store</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Dedicated to providing premium nutrition and care products for mothers
             and babies since 2020. We believe every mother and baby deserves the best.
@@ -128,7 +127,7 @@ export function AboutPage({
             <div>
               <h2 className="text-4xl font-bold mb-6">Our Story</h2>
               <p className="text-gray-600 text-lg mb-4 leading-relaxed">
-                MomCare Store was founded in 2020 with a simple mission: to make
+                MumCare Store was founded in 2020 with a simple mission: to make
                 premium mother and baby care products accessible to everyone. Our
                 founder, Abc, started this journey after experiencing the
                 challenges of finding quality, trusted products during her pregnancy.
@@ -140,13 +139,13 @@ export function AboutPage({
                 effectiveness.
               </p>
               <p className="text-gray-600 text-lg leading-relaxed">
-                Today, we're committed to supporting mothers at every stage of their
+                Today, we are committed to supporting mothers at every stage of their
                 journey, from pregnancy to early parenthood, with expert guidance and
                 premium products.
               </p>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-pink-200 to-blue-200 rounded-2xl p-1">
+              <div className="bg-linear-to-br from-pink-200 to-blue-200 rounded-2xl p-1">
                 <ImageWithFallback
                   src="https://plus.unsplash.com/premium_photo-1676032287637-1aa4d1f93d50?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8bW9tJTIwYW5kJTIwYmFieXxlbnwwfHwwfHx8MA%3D%3D"
                   alt="Our Story"
@@ -169,7 +168,7 @@ export function AboutPage({
                 <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardContent className="pt-6">
                     <div className="flex justify-center mb-4">
-                      <div className="bg-gradient-to-br from-pink-100 to-blue-100 p-4 rounded-full">
+                      <div className="bg-linear-to-br from-pink-100 to-blue-100 p-4 rounded-full">
                         <IconComponent className="h-8 w-8 text-pink-600" />
                       </div>
                     </div>
@@ -196,7 +195,7 @@ export function AboutPage({
               <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex justify-center mb-4">
-                    <div className="bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center font-bold text-lg">
+                    <div className="bg-linear-to-r from-pink-500 to-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center font-bold text-lg">
                       {milestone.year}
                     </div>
                   </div>
@@ -243,7 +242,7 @@ export function AboutPage({
       {/* Why Choose Us Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Why Choose MomCare</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">Why Choose MumCare</h2>
           <div className="max-w-4xl mx-auto">
             <div className="space-y-4">
               {[
@@ -255,7 +254,7 @@ export function AboutPage({
                 "24/7 Customer Support - Always here when you need us",
               ].map((reason, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <CheckCircle className="h-6 w-6 text-pink-600 flex-shrink-0 mt-1" />
+                  <CheckCircle className="h-6 w-6 text-pink-600 shrink-0 mt-1" />
                   <p className="text-lg text-gray-700">{reason}</p>
                 </div>
               ))}
@@ -265,13 +264,13 @@ export function AboutPage({
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-pink-600 to-blue-600">
+      <section className="py-16 bg-linear-to-r from-pink-600 to-blue-600">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Join Our Community
           </h2>
           <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-            Become part of thousands of happy mothers who trust MomCare for their
+            Become part of thousands of happy mothers who trust MumCare for their
             nutrition and baby care needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

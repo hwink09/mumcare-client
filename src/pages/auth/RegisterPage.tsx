@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Eye, EyeOff, User, Mail, Lock, Phone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye, EyeOff, User, Mail, Lock, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerUser } from "@/services/userService";
 
@@ -9,6 +10,7 @@ interface RegisterPageProps {
 }
 
 export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -59,12 +61,20 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <button 
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 bg-white/50 hover:bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm transition font-medium shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Home
+      </button>
+
       <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
 
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
+          <h2 className="text-2xl font-bold mb-4">Welcome to MumCare Store</h2>
 
           {/* Tabs */}
           <div className="flex gap-4">

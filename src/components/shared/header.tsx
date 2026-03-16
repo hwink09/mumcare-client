@@ -1,4 +1,4 @@
-import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X } from "lucide-react";
+import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X, PenTool, LayoutDashboard, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -11,7 +11,7 @@ interface HeaderProps {
   onLoginClick: () => void;
   onRegisterClick: () => void;
   isLoggedIn?: boolean;
-  user?: { firstName?: string; lastName?: string; email?: string };
+  user?: { firstName?: string; lastName?: string; email?: string; role?: string };
   onNavigate: (page: string) => void;
   onLogout?: () => void;
 }
@@ -28,15 +28,14 @@ export function Header({
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const userInitial = user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
 
   const navItems = [
     { label: "Home", value: "home" },
     { label: "Products", value: "products" },
-    { label: "Health Tips", value: "articles" },
-    { label: "Pre-Order", value: "preorder" },
+    { label: "Blogs", value: "blogs" },
     { label: "About Us", value: "about" },
     { label: "Contact", value: "contact" },
   ];
@@ -61,14 +60,14 @@ export function Header({
           <Button
             variant="ghost"
             onClick={() => onNavigate("home")}
-            className={cn("flex items-center gap-3 flex-shrink-0 h-auto p-0 hover:bg-transparent")}
+            className={cn("flex items-center gap-3 shrink-0 h-auto p-0 hover:bg-transparent")}
           >
-            <div className="bg-gradient-to-br from-pink-500 to-blue-500 p-2 rounded-xl">
+            <div className="bg-linear-to-br from-pink-500 to-blue-500 p-2 rounded-xl">
               <Baby className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">
-                MomCare Store
+              <h1 className="text-xl font-bold bg-linear-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">
+                MumCare Store
               </h1>
               <p className="text-xs text-muted-foreground">
                 Care for Mom & Baby
@@ -76,7 +75,7 @@ export function Header({
             </div>
           </Button>
 
-        
+
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
@@ -121,7 +120,7 @@ export function Header({
                       >
                         <div
                           className={cn(
-                            "w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-blue-500",
+                            "w-8 h-8 rounded-full bg-linear-to-br from-pink-500 to-blue-500",
                             "flex items-center justify-center text-white font-bold text-sm shrink-0"
                           )}
                         >
@@ -140,10 +139,27 @@ export function Header({
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       My Orders
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate("reviews")}>
+                      <Star className="h-4 w-4 mr-2" />
+                      My Reviews
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onNavigate("loyalty")}>
                       <Gift className="h-4 w-4 mr-2" />
                       Loyalty & Vouchers
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate("client_create_blog")}>
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Create Post / Blogs
+                    </DropdownMenuItem>
+                    {user?.role === "admin" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onNavigate("admin_dashboard")}>
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
@@ -253,6 +269,43 @@ export function Header({
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     My Orders
                   </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("reviews");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    My Reviews
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start mb-2"
+                    onClick={() => {
+                      onNavigate("client_create_blog");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <PenTool className="h-4 w-4 mr-2" />
+                    Create Post / Blogs
+                  </Button>
+                  {user?.role === "admin" && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start mb-2"
+                        onClick={() => {
+                          onNavigate("admin_dashboard");
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="ghost"
                     className="w-full justify-start mb-2"

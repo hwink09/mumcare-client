@@ -137,10 +137,11 @@ export function ProductListPage({
         }
 
         if (mounted) setProducts(items.length ? items : []);
-      } catch (e) {
+      } catch (error) {
         if (mounted) {
           setError("Failed to load products. Please try again.");
           setProducts([]);
+          console.log(error);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -153,7 +154,7 @@ export function ProductListPage({
   }, [pagination.page, pagination.limit, categoryId, search]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <Header
         cartItemCount={0}
         onCartClick={() => navigate("/cart")}
@@ -170,7 +171,7 @@ export function ProductListPage({
           <div>
             <h1 className="text-3xl font-bold">Products</h1>
             <p className="text-muted-foreground">
-              Browse products from MomCare Store
+              Browse products from MumCare Store
             </p>
           </div>
 
@@ -291,7 +292,7 @@ export function ProductListPage({
                               ? p.images[0]
                               : typeof p.images === "string" && p.images
                                 ? p.images
-                                : "https://placehold.co/600x400?text=MomCare"
+                                : "https://placehold.co/600x400?text=MumCare"
                         }
                         alt={p.title || p.name || "Product image"}
                         className="w-full h-full object-cover"

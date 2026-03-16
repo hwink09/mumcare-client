@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loginUser } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
@@ -9,12 +9,27 @@ interface LoginPageProps {
   onClose?: () => void;
   onSwitchToRegister?: () => void;
   onLoginSuccess?: (user: CurrentUser | null) => void;
+  initialEmail?: string;
+  initialPassword?: string;
+  title?: string;
+  subtitle?: string;
+  showRegister?: boolean;
+  redirectPath?: string | null;
 }
 
-export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: LoginPageProps) {
+export function LoginPage({
+  onClose,
+  onSwitchToRegister,
+  onLoginSuccess,
+  initialEmail = "",
+  initialPassword = "",
+  title = "Welcome to MumCare Store",
+  subtitle,
+  showRegister = true,
+}: LoginPageProps) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,22 +42,25 @@ export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: Login
 
     try {
       const result = await loginUser({ email, password });
-      console.log("Login successful:", result);
-      console.log("stored token", localStorage.getItem('accessToken'));
+      const loggedInUser = (result as any)?.data || (result as any)?.user || result;
+      const role = (loggedInUser as any)?.role;
 
-      // Call onLoginSuccess to update user state
+      // Cập nhật user state nếu có
       if (onLoginSuccess) {
-        // loginUser bây giờ luôn trả về user object
-        await onLoginSuccess(result as any);
+        onLoginSuccess(loggedInUser as any);
       }
-
-      // close modal if requested
       if (onClose) {
         onClose();
       }
 
-      // Redirect to homepage
-      navigate("/");
+      // Điều hướng dựa trên role
+      if (role === "staff") {
+        navigate("/staff");
+      } else if (role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/"); // HomePage cho client hoặc role khác
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
       setLoading(false);
@@ -50,23 +68,35 @@ export function LoginPage({ onClose, onSwitchToRegister, onLoginSuccess }: Login
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <button 
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 bg-white/50 hover:bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm transition font-medium shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Home
+      </button>
+      
       <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">Welcome to MomCare Store</h2>
+          <h2 className="text-2xl font-bold mb-4">{title}</h2>
+          {subtitle ? <p className="text-sm text-muted-foreground mb-4">{subtitle}</p> : null}
 
           {/* Tabs */}
           <div className="flex gap-4">
             <button className="px-6 py-2 bg-white text-black font-medium rounded-full border-2 border-gray-300">
               Login
             </button>
-            <button
-              onClick={onSwitchToRegister}
-              className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
-            >
-              Register
-            </button>
+            {/* Chỉ cho phép đăng ký nếu không phải staff/admin */}
+            {showRegister && (!email || (!email.endsWith("@gmail.com") && !email.endsWith("@admin.com"))) && (
+              <button
+                onClick={onSwitchToRegister}
+                className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
+              >
+                Register
+              </button>
+            )}
           </div>
         </div>
 

@@ -47,9 +47,9 @@ export function BlogDetailPage() {
   }, [id]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10 max-w-4xl">
-        <Button variant="outline" onClick={() => navigate("/blogs")} className="mb-6">Back to Articles</Button>
+        <Button variant="outline" onClick={() => navigate("/blogs")} className="mb-6">Back to Blogs</Button>
 
         {error && <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
 
@@ -60,7 +60,7 @@ export function BlogDetailPage() {
         ) : (
           <Card className="overflow-hidden">
             <div className="h-72 bg-gray-100">
-              <img src={blog.image || "https://placehold.co/1200x500?text=MomCare+Article"} alt={blog.title} className="w-full h-full object-cover" />
+              <img src={blog.image || "https://placehold.co/1200x500?text=MumCare+Article"} alt={blog.title} className="w-full h-full object-cover" />
             </div>
             <CardContent className="pt-6">
               <h1 className="text-3xl font-bold mb-3">{blog.title}</h1>

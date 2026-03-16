@@ -72,7 +72,7 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading profile...</p>
@@ -83,7 +83,7 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
         <Card>
           <CardContent className="py-10 text-center">
             <p className="text-lg font-medium text-destructive mb-2">Error loading profile</p>
@@ -101,7 +101,7 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
     : firstName || user?.email?.split("@")[0] || "User";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
         <Button
           variant="ghost"
@@ -122,7 +122,7 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
               <div className="flex items-center gap-4">
                 <div
                   className={cn(
-                    "w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-blue-500",
+                    "w-20 h-20 rounded-full bg-linear-to-br from-pink-500 to-blue-500",
                     "flex items-center justify-center text-white font-bold text-2xl shrink-0"
                   )}
                 >
@@ -198,7 +198,7 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
                     <User className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-muted-foreground">User ID</p>
-                      <p className="text-base font-mono text-sm">{user._id || user.id}</p>
+                      <p className="text-base font-mono">{user._id || user.id}</p>
                     </div>
                   </div>
                 )}
