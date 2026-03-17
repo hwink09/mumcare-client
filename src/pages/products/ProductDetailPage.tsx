@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProductById } from "@/services/productService";
 import type { Product } from "@/types/product";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import { formatVND } from "@/lib/currency";
 
 // ui components
 import { Button } from "@/components/ui/button";
@@ -68,7 +70,11 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
   return (
     <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
-        <Button variant="outline" onClick={() => navigate("/products")} className="mb-6">Back to products</Button>
+        <div className="mb-6">
+          <Button variant="outline" onClick={() => navigate("/products")}>
+            Back to products
+          </Button>
+        </div>
 
         {error && <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
         {addedMessage && <div className="mb-4 p-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm">{addedMessage}</div>}
@@ -77,13 +83,17 @@ export function ProductDetailPage({ onAddToCart }: ProductDetailPageProps) {
           <div className="text-center text-muted-foreground">Product not found</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="rounded-lg overflow-hidden bg-gray-100 h-85">
-              <img src={mainImage} alt={product.title || product.name} className="w-full h-full object-cover" />
+            <div className="flex items-center justify-center rounded-lg border bg-slate-50 p-3 min-h-[400px] lg:min-h-[560px]">
+              <ImageWithFallback
+                src={mainImage}
+                alt={product.title || product.name || "Product image"}
+                className="max-h-[540px] w-full max-w-[92%] object-contain"
+              />
             </div>
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.title || product.name}</h1>
               <p className="text-muted-foreground mb-4">{product.description}</p>
-              <div className="text-3xl font-bold text-primary mb-4">${Number(product.price || 0).toFixed(2)}</div>
+              <div className="text-3xl font-bold text-primary mb-4">{formatVND(Number(product.price || 0))}</div>
               <div className="text-sm text-muted-foreground mb-6">Brand: {product.brand || "MumCare"}</div>
 
               <div className="flex gap-3">

@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { resolvePageRoute } from "@/lib/pageRoutes";
 
 interface HeaderProps {
   cartItemCount: number;
@@ -28,6 +30,8 @@ export function Header({
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const userInitial = user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
   const userName = user?.firstName || user?.email?.split("@")[0] || "User";
@@ -40,15 +44,20 @@ export function Header({
     { label: "Contact", value: "contact" },
   ];
 
+  const isNavItemActive = (page: string) => {
+    const targetPath = resolvePageRoute(page);
+    if (targetPath === "/") return pathname === "/";
+    return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
-    // Điều hướng tới trang products, chỉ tìm theo tên sản phẩm (search param)
-    const url = new URL(window.location.href);
-    url.pathname = "/products";
-    url.searchParams.set("search", trimmed);
-    window.location.href = url.toString();
+    const params = new URLSearchParams();
+    params.set("search", trimmed);
+    navigate(`/products?${params.toString()}`);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -199,7 +208,12 @@ export function Header({
                 key={item.value}
                 variant="ghost"
                 onClick={() => onNavigate(item.value)}
-                className="text-base font-medium hover:text-primary rounded-none border-b-2 border-transparent hover:border-primary py-4"
+                className={cn(
+                  "text-base rounded-none border-b-2 py-4 transition-colors",
+                  isNavItemActive(item.value)
+                    ? "font-semibold text-primary border-primary"
+                    : "font-medium border-transparent hover:text-primary hover:border-primary"
+                )}
               >
                 {item.label}
               </Button>
@@ -236,7 +250,10 @@ export function Header({
                     onNavigate(item.value);
                     setMobileMenuOpen(false);
                   }}
-                  className="justify-start text-base"
+                  className={cn(
+                    "justify-start text-base",
+                    isNavItemActive(item.value) ? "bg-primary/10 text-primary font-semibold" : ""
+                  )}
                 >
                   {item.label}
                 </Button>
@@ -336,3 +353,4 @@ export function Header({
     </header>
   );
 }
+

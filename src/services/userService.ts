@@ -57,8 +57,8 @@ const authService = {
     return data;
   },
 
-  resetPassword: async (token: string, password: string, confirmPassword: string) => {
-    const data: any = await axiosInstance.post(`/users/auth/reset-password/${token}`, { password, confirmPassword });
+  resetPassword: async (token: string, password: string) => {
+    const data: any = await axiosInstance.post(`/users/auth/reset-password/${token}`, { password });
     return data;
   },
 };

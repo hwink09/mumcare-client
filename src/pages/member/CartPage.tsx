@@ -6,28 +6,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import type { Product } from "@/types/product";
+import { formatVND } from "@/lib/currency";
 
 // ensure cart items always have an id (mapped from server _id earlier)
 export type CartItem = Product & { quantity: number; id: string };
 
 interface CartPageProps {
+  isLoggedIn?: boolean;
   items: CartItem[];
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemoveItem: (productId: string) => void;
 }
 
 export function CartPage({
+  isLoggedIn = false,
   items,
   onUpdateQuantity,
   onRemoveItem,
 }: CartPageProps) {
   const navigate = useNavigate();
 
+  const requireLoginAndNavigate = (targetPath: string) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    navigate(targetPath);
+  };
+
   const subtotal = useMemo(() => {
     return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [items]);
 
-  const shipping = subtotal > 50 ? 0 : items.length > 0 ? 4.99 : 0;
+  const shipping = subtotal > 500_000 ? 0 : items.length > 0 ? 30_000 : 0;
   const total = subtotal + shipping;
 
   return (
@@ -41,7 +52,7 @@ export function CartPage({
             </p>
           </div>
           <Button variant="outline" asChild>
-            <Link to="/">Continue shopping</Link>
+            <Link to="/products">Continue shopping</Link>
           </Button>
         </div>
 
@@ -131,10 +142,10 @@ export function CartPage({
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-muted-foreground">
-                              ${item.price.toFixed(2)} each
+                              {formatVND(Number(item.price))} each
                             </div>
                             <div className="text-lg font-bold text-primary">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              {formatVND(Number(item.price) * item.quantity)}
                             </div>
                           </div>
                         </div>
@@ -152,23 +163,23 @@ export function CartPage({
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>{formatVND(subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
                       <span>
-                        {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                        {shipping === 0 ? "Miễn phí" : formatVND(shipping)}
                       </span>
                     </div>
                     <div className="border-t pt-2 flex justify-between font-semibold">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatVND(total)}</span>
                     </div>
                   </div>
 
                   <Button
                     className="w-full mt-5"
-                    onClick={() => navigate("/checkout")}
+                    onClick={() => requireLoginAndNavigate("/checkout")}
                   >
                     Proceed to Checkout
                   </Button>
@@ -182,8 +193,12 @@ export function CartPage({
                     Earn points with every purchase and redeem vouchers in
                     checkout.
                   </div>
-                  <Button variant="outline" className="w-full mt-4" asChild>
-                    <Link to="/loyalty">View Loyalty</Link>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={() => requireLoginAndNavigate("/loyalty")}
+                  >
+                    View Loyalty
                   </Button>
                 </CardContent>
               </Card>
