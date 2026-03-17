@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { getBlogById } from "@/services/blogService";
 
 type Blog = {
@@ -58,18 +57,20 @@ export function BlogDetailPage() {
         ) : !blog ? (
           <div className="text-center text-muted-foreground">Article not found</div>
         ) : (
-          <Card className="overflow-hidden">
-            <div className="h-72 bg-gray-100">
-              <img src={blog.image || "https://placehold.co/1200x500?text=MumCare+Article"} alt={blog.title} className="w-full h-full object-cover" />
-            </div>
-            <CardContent className="pt-6">
+          <div>
+            <img
+              src={blog.image || "https://placehold.co/1200x500?text=MumCare+Article"}
+              alt={blog.title}
+              className="block w-full h-auto"
+            />
+            <div className="pt-6">
               <h1 className="text-3xl font-bold mb-3">{blog.title}</h1>
               <p className="text-sm text-muted-foreground mb-6">{blog.createdAt ? new Date(blog.createdAt).toLocaleString() : ""}</p>
               <div className="prose max-w-none text-sm leading-7 text-gray-700 whitespace-pre-wrap">
                 {blog.content || blog.description || "No content available."}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>

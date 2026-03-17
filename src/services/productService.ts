@@ -17,6 +17,20 @@ const productService = {
     return data.data || data;
   },
 
+  getAllWithPagination: async (params: GetProductsParams = {}) => {
+    const data: any = await axiosInstance.get('/products', { params });
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return {
+        data: Array.isArray(data.data) ? data.data : [],
+        pagination: data.pagination || null,
+      };
+    }
+    return {
+      data: Array.isArray(data) ? data : [],
+      pagination: null,
+    };
+  },
+
   getById: async (id: string) => {
     const data: any = await axiosInstance.get(`/products/${encodeURIComponent(id)}`);
     return data.data || data;
@@ -60,6 +74,7 @@ export default productService;
 
 // Legacy exports for compatibility
 export const getProducts = productService.getAll;
+export const getProductsWithPagination = productService.getAllWithPagination;
 export const getProductById = productService.getById;
 export const createProduct = productService.create;
 export const updateProduct = productService.update;

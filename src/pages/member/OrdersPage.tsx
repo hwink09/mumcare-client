@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Star } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import { formatVND } from "@/lib/currency";
 
 type OrderItem = {
   _id: string;
@@ -76,7 +77,9 @@ function OrderProductItem({ item, isDelivered, userId }: { item: { productId: st
         <div className="text-xs text-muted-foreground mt-0.5">x{item.count}</div>
       </div>
       <div>
-        <div className="text-sm font-semibold text-right mb-1">${Number(product.price * item.count).toFixed(2)}</div>
+        <div className="text-sm font-semibold text-right mb-1">
+          {formatVND(Number(product.price) * item.count)}
+        </div>
         {canReview && (
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowReview(true)}>Review</Button>
         )}
@@ -190,7 +193,7 @@ export function OrdersPage() {
                     <div><span className="font-medium">Address:</span> {order.address || "-"}</div>
                     <div><span className="font-medium">Date:</span> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}</div>
                     <div><span className="font-medium">Voucher:</span> {order.couponCode || "None"}</div>
-                    <div><span className="font-medium">Discount:</span> ${Number(order.discountAmount || 0).toFixed(2)}</div>
+                    <div><span className="font-medium">Discount:</span> {formatVND(Number(order.discountAmount || 0))}</div>
                   </div>
                   
                   <div className="border rounded-md px-3">

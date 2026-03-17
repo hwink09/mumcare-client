@@ -6,6 +6,7 @@ import { createOrder } from "@/services/orderService";
 import type { CartItem } from "@/hooks/useAuth";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
 import couponService from "@/services/couponService";
+import { formatVND } from "@/lib/currency";
 
 interface CheckoutPageProps {
     isLoggedIn: boolean;
@@ -29,8 +30,8 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
 
     // Cho phép địa chỉ ngắn hơn (>= 3 ký tự) để dễ test hơn
     const canSubmit = useMemo(
-        () => isLoggedIn && address.trim().length >= 3,
-        [isLoggedIn, address]
+        () => address.trim().length >= 3,
+        [address]
     );
 
     const handleApplyCoupon = async () => {
@@ -58,7 +59,10 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
             }
 
             const discount = Math.floor((subtotal * found.discount) / 100);
-            setCouponMessage({ type: 'success', text: `Voucher applied! You will save $${discount.toFixed(2)} (${found.discount}% off).` });
+            setCouponMessage({
+                type: 'success',
+                text: `Voucher applied! You will save ${formatVND(discount)} (${found.discount}% off).`,
+            });
         } catch (err: any) {
             setCouponMessage({ type: 'error', text: err.message || "Failed to validate voucher." });
         } finally {
@@ -73,7 +77,7 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
             setMessage(null);
 
             if (!isLoggedIn) {
-                setError("Please login before checkout.");
+                navigate("/login");
                 return;
             }
 
@@ -133,12 +137,6 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
                         <CardTitle>Delivery & Voucher</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {!isLoggedIn && (
-                            <div className="p-3 rounded-md border border-amber-200 bg-amber-50 text-amber-700 text-sm">
-                                Please login before checkout.
-                            </div>
-                        )}
-
                         {error && <div className="p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
                         {message && <div className="p-3 rounded-md border border-green-200 bg-green-50 text-green-700 text-sm">{message}</div>}
 
@@ -181,7 +179,7 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
 
                         <div className="flex gap-3 pt-4 border-t border-slate-100">
                             <Button variant="outline" onClick={() => navigate("/cart")} className="flex-1">Back to Cart</Button>
-                            <Button disabled={!canSubmit || loading} onClick={handleCheckout} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white">
+                            <Button disabled={loading || !canSubmit} onClick={handleCheckout} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white">
                                 {loading ? "Processing..." : "Place Order"}
                             </Button>
                         </div>

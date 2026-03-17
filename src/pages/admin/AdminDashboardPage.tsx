@@ -20,6 +20,7 @@ import { AdminProductManagementPage } from "./AdminProductManagementPage";
 import { AdminCategoryManagementPage } from "./AdminCategoryManagementPage";
 import { AdminBlogManagementPage } from "./AdminBlogManagementPage";
 import { AdminVoucherManagementPage } from "./AdminVoucherManagementPage";
+import { formatVND } from "@/lib/currency";
 
 type AdminDashboardProps = {
   user?: CurrentUser | null;
@@ -70,7 +71,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
       { label: "Blocked", value: "-", caption: "Loading..." },
     ],
     reports: [
-      { label: "Total Revenue", value: "$-", caption: "Loading..." },
+      { label: "Total Revenue", value: "-", caption: "Loading..." },
       { label: "Delivered Orders", value: "-", caption: "Loading..." },
       { label: "Total Products", value: "-", caption: "Loading..." },
     ],
@@ -123,7 +124,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
               totalRevenue += Number(o.checkoutTotal);
           }
       });
-      const revenueStr = totalRevenue > 0 ? `$${totalRevenue.toLocaleString()}` : "$0.00";
+      const revenueStr = formatVND(totalRevenue);
       const totalProductsCount = productsList.length;
 
       setStats({

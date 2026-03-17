@@ -7,7 +7,9 @@ import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import type { Product } from "@/types/product";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getProducts } from "@/services/productService";
+import { formatVND } from "@/lib/currency";
 
 interface HomePageProps {
   featuredProducts?: Product[];
@@ -21,8 +23,15 @@ interface HomePageProps {
 }
 
 export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginClick, onRegisterClick, isLoggedIn = false, user, onLogoutClick }: HomePageProps) {
+  const navigate = useNavigate();
   const [localFeatured, setLocalFeatured] = useState<Product[]>(featuredProducts || []);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
+
+  const toTwoLinePreview = (value: string, maxChars = 88) => {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (normalized.length <= maxChars) return normalized;
+    return `${normalized.slice(0, maxChars).trimEnd()}...`;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -162,7 +171,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
               {
                 icon: Truck,
                 title: "Free Shipping",
-                description: "On orders over $50",
+                description: "On orders over 500,000 VND",
                 color: "text-blue-500",
                 bg: "bg-blue-50"
               },
@@ -213,7 +222,23 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {localFeatured.slice(0, 4).map((product) => (
-              <Card key={product.id} className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white flex flex-col h-full">
+              <Card
+                key={product.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  const productId = product.id || product._id;
+                  if (productId) navigate(`/products/${productId}`);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    const productId = product.id || product._id;
+                    if (productId) navigate(`/products/${productId}`);
+                  }
+                }}
+                className="group cursor-pointer overflow-hidden border-0 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all duration-300 bg-white flex flex-col h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
                 <div className="relative aspect-square overflow-hidden bg-slate-100 p-4">
                   <ImageWithFallback
                     src={
@@ -226,7 +251,7 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                             : "https://placehold.co/600x400?text=MumCare"
                     }
                     alt={product.name ?? "Product"}
-                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain mix-blend-multiply transition-opacity duration-300"
                   />
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1">
                     {product.tags?.map((tag: string) => (
@@ -238,14 +263,23 @@ export function HomePage({ featuredProducts, onNavigate, onAddToCart, onLoginCli
                 </div>
                 <CardContent className="p-5 flex flex-col grow">
                   <h3 className="font-bold text-slate-800 text-lg mb-1 line-clamp-2">{product.name}</h3>
-                  <p className="text-slate-500 text-sm mb-4 line-clamp-2 grow">
-                    {product.description}
+                  <p className="mb-4 h-12 grow overflow-hidden text-sm leading-6 text-slate-500">
+                    {toTwoLinePreview(
+                      product.description || "Premium product from MumCare."
+                    )}
                   </p>
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
                     <span className="text-xl font-extrabold text-pink-600">
-                      ${product.price.toFixed(2)}
+                      {formatVND(Number(product.price))}
                     </span>
-                    <Button size="sm" className="rounded-full bg-slate-900 hover:bg-slate-800 text-white" onClick={() => handleAddToCartClick(product)}>
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-slate-900 hover:bg-slate-800 text-white"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleAddToCartClick(product);
+                      }}
+                    >
                       Add to Cart
                     </Button>
                   </div>
