@@ -22,19 +22,39 @@ import { AdminBlogManagementPage } from "@/pages/admin/AdminBlogManagementPage";
 import { BlogDetailPage } from "@/pages/blogs/BlogDetailPage";
 import { BlogListPage } from "@/pages/blogs/BlogListPage";
 import { ClientCreateBlogPage } from "@/pages/blogs/ClientCreateBlogPage";
-import { Header } from "@/components/shared/header";
 import { AboutPage } from "@/pages/About";
 import { ContactPage } from "@/pages/Contact";
 import { CartPage } from "@/pages/member/CartPage";
 import { CheckoutPage } from "@/pages/member/CheckoutPage";
 import { LoyaltyPage } from "@/pages/member/LoyaltyPage";
 import { OrdersPage } from "@/pages/member/OrdersPage";
+import { OrderDetailPage } from "@/pages/member/OrderDetailPage";
 import { ProfilePage } from "@/pages/member/ProfilePage";
 import { CouponsPage } from "@/pages/member/CouponsPage";
 import { MyReviewsPage } from "@/pages/member/MyReviewsPage";
 import { ProductDetailPage } from "@/pages/products/ProductDetailPage";
 import { ProductListPage } from "@/pages/products/ProductListPage";
+import { Header } from "@/components/shared/header";
 import { resolvePageRoute } from "@/lib/pageRoutes";
+
+function App() {
+  const auth = useAuth();
+  const cart = useCart();
+
+  if (auth.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <Router>
+      <AppRoutes auth={auth} cart={cart} />
+    </Router>
+  );
+}
 
 interface AppRoutesProps {
   auth: ReturnType<typeof useAuth>;
@@ -202,18 +222,12 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
 
       <Route
         path="/cart"
-        element={
-          <CartPage
-            isLoggedIn={auth.isLoggedIn}
-            items={cart.items}
-            onUpdateQuantity={cart.updateQuantity}
-            onRemoveItem={cart.removeItem}
-          />
-        }
+        element={<CartPage items={cart.items} onUpdateQuantity={cart.updateQuantity} onRemoveItem={cart.removeItem} />}
       />
       <Route path="/checkout" element={<CheckoutPage isLoggedIn={auth.isLoggedIn} cartItems={cart.items} clearCart={cart.clearCart} />} />
       <Route path="/orders" element={<OrdersPage />} />
-      <Route path="/reviews" element={<MyReviewsPage />} />
+      <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+      <Route path="/reviews" element={<MyReviewsPage user={auth.user || undefined} isLoggedIn={auth.isLoggedIn} />} />
       <Route path="/loyalty" element={<LoyaltyPage />} />
       <Route path="/coupons" element={<CouponsPage user={auth.user} />} />
       <Route path="/profile" element={<ProfilePage initialUser={auth.user || undefined} />} />
@@ -249,25 +263,6 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         }
       />
     </Routes>
-  );
-}
-
-function App() {
-  const auth = useAuth();
-  const cart = useCart();
-
-  if (auth.loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
-        Loading...
-      </div>
-    );
-  }
-
-  return (
-    <Router>
-      <AppRoutes auth={auth} cart={cart} />
-    </Router>
   );
 }
 

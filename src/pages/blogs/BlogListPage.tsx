@@ -20,6 +20,8 @@ type Blog = {
     categoryId?: string;
     image?: string;
     createdAt?: string;
+    likes?: string[];
+    dislikes?: string[];
 };
 
 interface BlogListPageProps {
@@ -124,7 +126,11 @@ export function BlogListPage({
                                 </div>
                                 <CardContent className="pt-4">
                                     <h3 className="font-semibold line-clamp-2 mb-2">{blog.title}</h3>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{blog.description || "Read this helpful article for your health and care journey."}</p>
+                                    <p className="text-sm text-muted-foreground line-clamp-3">{blog.description || "Read this helpful article for your health and care journey."}</p>
+                                    <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
+                                        <span>Likes: {blog.likes?.length || 0}</span>
+                                        <span>Dislikes: {blog.dislikes?.length || 0}</span>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}

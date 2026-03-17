@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getMyOrders } from "@/services/orderService";
 import { getProductById, addRating } from "@/services/productService";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Star } from "lucide-react";
+import { Star, Package } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { formatVND } from "@/lib/currency";
+
+const STATUS_COLOR: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  processing: "bg-blue-100 text-blue-700 border-blue-200",
+  shipped: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  canceled: "bg-red-100 text-red-700 border-red-200",
+};
 
 type OrderItem = {
   _id: string;
   orderCode?: string;
   status: string;
-  address?: string;
-  couponCode?: string | null;
-  discountAmount?: number;
   createdAt?: string;
-  products?: Array<{ productId: string; count: number }>;
 };
 
 function OrderProductItem({ item, isDelivered, userId }: { item: { productId: string; count: number }; isDelivered: boolean; userId?: string }) {
@@ -125,90 +128,84 @@ function OrderProductItem({ item, isDelivered, userId }: { item: { productId: st
 
 export function OrdersPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isLoggedIn, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;          // wait for auth to finish loading
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
     let mounted = true;
     setLoading(true);
     setError(null);
-
     (async () => {
       try {
         const res = await getMyOrders();
-        const items = (Array.isArray(res) ? res : (res as { data?: unknown }).data || []) as OrderItem[];
-        if (mounted) setOrders(items.length ? items : []);
+        const items = Array.isArray(res) ? res : ((res as any).data || []);
+        if (mounted) setOrders(items);
       } catch {
-        if (mounted) {
-          setError("Failed to load orders. Please try again.");
-          setOrders([]);
-        }
+        if (mounted) setError("Failed to load orders. Please try again.");
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    return () => { mounted = false; };
+  }, [authLoading, isLoggedIn, navigate]);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">My Orders</h1>
-            <p className="text-muted-foreground">Track your purchase and loyalty-eligible deliveries</p>
+            <h1 className="text-3xl font-bold text-slate-800">My Orders</h1>
+            <p className="text-muted-foreground text-sm mt-1">Click an order code to view details</p>
           </div>
           <Button variant="outline" onClick={() => navigate("/")}>Back Home</Button>
         </div>
 
-        {error && <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>}
+        {error && (
+          <div className="mb-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>
+        )}
 
         {loading ? (
-          <div className="py-16 text-center text-muted-foreground">Loading orders...</div>
+          <div className="flex items-center justify-center py-20 text-muted-foreground">Loading orders...</div>
         ) : orders.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center">
-              <p className="font-medium mb-2">No orders yet</p>
-              <p className="text-sm text-muted-foreground mb-4">Create your first order from checkout.</p>
-              <Button onClick={() => navigate("/products")}>Shop now</Button>
-            </CardContent>
-          </Card>
+          <div className="text-center py-20">
+            <Package className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+            <p className="font-medium text-slate-600 mb-2">No orders yet</p>
+            <p className="text-sm text-muted-foreground mb-6">Start shopping and your orders will appear here.</p>
+            <Button onClick={() => navigate("/products")}>Shop now</Button>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {orders.map((order) => (
-              <Card key={order._id}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span>{order.orderCode || `Order ${order._id.slice(-6).toUpperCase()}`}</span>
-                    <Badge variant="secondary" className="capitalize">{order.status}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-slate-50 p-3 rounded-md">
-                    <div><span className="font-medium">Address:</span> {order.address || "-"}</div>
-                    <div><span className="font-medium">Date:</span> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}</div>
-                    <div><span className="font-medium">Voucher:</span> {order.couponCode || "None"}</div>
-                    <div><span className="font-medium">Discount:</span> {formatVND(Number(order.discountAmount || 0))}</div>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100 overflow-hidden">
+            {orders.map((order) => {
+              const displayCode = order.orderCode || `Order #${order._id.slice(-6).toUpperCase()}`;
+              const statusColor = STATUS_COLOR[order.status] || "bg-slate-100 text-slate-600";
+              return (
+                <div key={order._id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
+                  <div className="flex flex-col gap-0.5">
+                    <Link
+                      to={`/orders/${order._id}`}
+                      className="text-base font-mono font-semibold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors"
+                    >
+                      {displayCode}
+                    </Link>
+                    {order.createdAt && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      </span>
+                    )}
                   </div>
-                  
-                  <div className="border rounded-md px-3">
-                    {order.products?.map((item, idx) => (
-                      <OrderProductItem 
-                        key={`${item.productId}-${idx}`} 
-                        item={item} 
-                        isDelivered={order.status === "delivered"}
-                        userId={user?._id || user?.id}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <Badge className={`capitalize border px-3 py-0.5 text-xs font-medium ${statusColor}`}>
+                    {order.status}
+                  </Badge>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

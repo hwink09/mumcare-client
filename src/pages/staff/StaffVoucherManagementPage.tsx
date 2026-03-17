@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, Plus, Trash2, Edit } from "lucide-react";
+import { Copy, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CurrentUser } from "@/hooks/useAuth";
@@ -14,13 +14,13 @@ type Voucher = {
   pointCost?: number;
 };
 
-interface AdminVoucherManagementPageProps {
+interface StaffVoucherManagementPageProps {
   user?: CurrentUser | null;
-  onLogout: () => void;
+  onLogout?: () => void;
   isEmbedded?: boolean;
 }
 
-export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherManagementPageProps) {
+export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherManagementPageProps) {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,16 +117,6 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
       setFormError(err.message || "Operation failed.");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this voucher?")) return;
-    try {
-      await couponService.delete(id);
-      await loadVouchers();
-    } catch {
-      setError("Failed to delete voucher.");
     }
   };
 
@@ -233,7 +223,7 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
       </form>
     );
   } else if (vouchers.length === 0) {
-    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click &quot;Add Voucher&quot; to create one.</div>;
+    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click "Add Voucher" to create one.</div>;
   } else {
     content = (
       <div className="overflow-x-auto">
@@ -252,7 +242,7 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
               const isExpired = new Date(v.expiry) < new Date();
               return (
                 <tr key={v._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-semibold text-slate-900 group relative truncate max-w-37.5">
+                  <td className="py-3 px-4 font-semibold text-slate-900 group relative truncate max-w-[150px]">
                     {v.name}
                     <button
                         className="ml-2 text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -276,10 +266,6 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
                             <span className="sr-only">Edit</span>
                             <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(v._id)} className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50">
-                            <span className="sr-only">Delete</span>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
                     </div>
                   </td>
                 </tr>
@@ -294,4 +280,4 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
   return wrapContent(content);
 }
 
-export default AdminVoucherManagementPage;
+export default StaffVoucherManagementPage;

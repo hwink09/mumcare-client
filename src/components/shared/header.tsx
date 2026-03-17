@@ -1,4 +1,4 @@
-import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X, PenTool, LayoutDashboard, Star } from "lucide-react";
+import { Baby, Bell, User, LogOut, ShoppingBag, Gift, Search, Menu, X, LayoutDashboard, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -156,10 +156,7 @@ export function Header({
                       <Gift className="h-4 w-4 mr-2" />
                       Loyalty & Vouchers
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onNavigate("client_create_blog")}>
-                      <PenTool className="h-4 w-4 mr-2" />
-                      Create Post / Blogs
-                    </DropdownMenuItem>
+
                     {user?.role === "admin" && (
                       <>
                         <DropdownMenuSeparator />
@@ -297,17 +294,7 @@ export function Header({
                     <Star className="h-4 w-4 mr-2" />
                     My Reviews
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start mb-2"
-                    onClick={() => {
-                      onNavigate("client_create_blog");
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <PenTool className="h-4 w-4 mr-2" />
-                    Create Post / Blogs
-                  </Button>
+
                   {user?.role === "admin" && (
                     <>
                       <Button

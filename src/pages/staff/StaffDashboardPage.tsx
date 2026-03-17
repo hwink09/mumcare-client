@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { getAllOrders, updateOrderStatus, deleteOrder } from "@/services/orderService";
 import { getProducts, updateProduct, deleteProduct } from "@/services/productService";
+import { StaffBlogManagementPage } from "./StaffBlogManagementPage";
+import { StaffVoucherManagementPage } from "./StaffVoucherManagementPage";
 
 type StaffDashboardProps = {
   user?: CurrentUser | null;
@@ -40,7 +42,7 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
 
 export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "support">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "support" | "blogs" | "vouchers">("orders");
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -182,7 +184,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
     }
   };
 
-  const activeTabClasses = (tab: "orders" | "inventory" | "support") =>
+  const activeTabClasses = (tab: "orders" | "inventory" | "support" | "blogs" | "vouchers") =>
     activeTab === tab
       ? "bg-slate-900 text-white shadow"
       : "bg-white/80 text-foreground border border-transparent hover:bg-white";
@@ -253,6 +255,8 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           <Button className={activeTabClasses("orders")} onClick={() => setActiveTab("orders")}>Orders</Button>
           <Button className={activeTabClasses("inventory")} onClick={() => setActiveTab("inventory")}>Inventory</Button>
           <Button className={activeTabClasses("support")} onClick={() => setActiveTab("support")}>Support</Button>
+          <Button className={activeTabClasses("vouchers")} onClick={() => setActiveTab("vouchers")}>Vouchers</Button>
+          <Button className={activeTabClasses("blogs")} onClick={() => setActiveTab("blogs")}>Blogs</Button>
         </div>
 
         <div className="space-y-4">
@@ -283,65 +287,98 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                       </button>
                     </div>
 
-                    {(showCanceledOrders ? orders : orders.filter((o) => o.status !== "canceled")).map((order) => {
-                      const next = getNextStatus(order.status);
-                      return (
-                        <div key={order._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                          <div className="flex-1">
-                            <div className="flex flex-wrap gap-2 items-center">
-                              <span className="font-semibold">{order.orderCode || order._id}</span>
-                              <Badge variant="secondary" className="capitalize">
-                                {ORDER_STATUS_LABEL[order.status] || order.status}
-                              </Badge>
-                            </div>
-                            <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
-                              <div>Address: {order.address || "-"}</div>
-                              <div>Items: {order.products?.reduce((s, i) => s + i.count, 0) || 0}</div>
-                              <div>Ordered: {order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}</div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            {isAdmin ? (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={order.status}
-                                  onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                                >
-                                  {Object.entries(ORDER_STATUS_LABEL).map(([key, label]) => (
-                                    <option key={key} value={key}>
-                                      {label}
-                                    </option>
-                                  ))}
-                                </select>
-                                <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
-                                  Delete
-                                </Button>
-                              </div>
-                            ) : (
-                              next && (
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => handleStatusUpdate(order._id, next)}
-                                >
-                                  Mark as {ORDER_STATUS_LABEL[next] || next}
-                                </Button>
-                              )
-                            )}
-                            <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order._id)}>
-                              Cancel
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => {
-                              setSelectedOrderId(order._id)
-                              setOrderNote("")
-                            }}>
-                              Add note
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Order ID
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Status
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Address
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Items
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Date
+                            </th>
+
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {(showCanceledOrders ? orders : orders.filter((o) => o.status !== "canceled")).map((order) => {
+                            const next = getNextStatus(order.status);
+                            return (
+                              <tr key={order._id} className="hover:bg-slate-50">
+                                <td className="px-4 py-3 text-sm font-semibold text-slate-700">
+                                  {order.orderCode || order._id}
+                                </td>
+                                <td className="px-4 py-3 text-sm">
+                                  {isAdmin ? (
+                                    <select
+                                      value={order.status}
+                                      onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                                      className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                    >
+                                      {Object.entries(ORDER_STATUS_LABEL).map(([key, label]) => (
+                                        <option key={key} value={key}>
+                                          {label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <Badge variant="secondary" className="capitalize">
+                                      {ORDER_STATUS_LABEL[order.status] || order.status}
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-slate-600 max-w-[200px] truncate">
+                                  {order.address || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-slate-600">
+                                  {order.products?.reduce((s, i) => s + i.count, 0) || 0}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-slate-600">
+                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
+                                </td>
+                                <td className="px-4 py-3 text-right text-sm">
+                                  <div className="flex items-center justify-end gap-2 flex-wrap">
+                                    {isAdmin ? (
+                                      <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
+                                        Delete
+                                      </Button>
+                                    ) : (
+                                      next && (
+                                        <Button
+                                          size="sm"
+                                          variant="secondary"
+                                          onClick={() => handleStatusUpdate(order._id, next)}
+                                        >
+                                          Mark {ORDER_STATUS_LABEL[next] || next}
+                                        </Button>
+                                      )
+                                    )}
+                                    <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order._id)}>
+                                      Cancel
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => {
+                                      setSelectedOrderId(order._id)
+                                      setOrderNote("")
+                                    }}>
+                                      Note
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -353,9 +390,6 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
               <CardHeader className="pb-2">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle className="text-lg">Inventory management</CardTitle>
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    {isAdmin ? "Admin controls" : "Read only"}
-                  </span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -366,46 +400,66 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                 ) : products.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground">No products found.</div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {products.map((product) => (
-                      <div key={product._id} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                        <div>
-                          <div className="font-semibold text-base">{product.title}</div>
-                          <div className="mt-2 text-sm text-muted-foreground">
-                            Current Stock: {product.quantity} • Sold: {product.sold}
-                          </div>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Available</span>
-                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 font-medium">
-                            {product.quantity}
-                          </span>
-                        </div>
-                        {isAdmin && (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditProductQuantity(product._id, product.quantity)}
-                            >
-                              Edit stock
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteProduct(product._id)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            Product Name
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">
+                            Available Stock
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">
+                            Sold
+                          </th>
+
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {products.map((product) => (
+                          <tr key={product._id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 text-sm font-semibold text-slate-700">
+                              {product.title}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 font-medium">
+                                {product.quantity}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600">
+                              {product.sold}
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm">
+                              {isAdmin && (
+                                <div className="flex items-center justify-end gap-2 flex-wrap">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditProductQuantity(product._id, product.quantity)}
+                                  >
+                                    Edit stock
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeleteProduct(product._id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
+
 
           {activeTab === "support" && (
             <Card className="border-0 shadow-lg shadow-slate-100">
@@ -475,6 +529,18 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {activeTab === "vouchers" && (
+            <div className="mt-4">
+              <StaffVoucherManagementPage user={user} onLogout={onLogout} isEmbedded />
+            </div>
+          )}
+
+          {activeTab === "blogs" && (
+            <div className="mt-4">
+              <StaffBlogManagementPage user={user} onLogout={onLogout} isEmbedded />
+            </div>
           )}
         </div>
       </div>

@@ -137,7 +137,7 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
                   placeholder="Write your article here..."
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="min-h-75 resize-y"
+                  className="min-h-[300px] resize-y"
                   required
                 />
               </div>
