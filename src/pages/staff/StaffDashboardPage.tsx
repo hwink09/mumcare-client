@@ -42,7 +42,7 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
 
 export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "support" | "blogs" | "vouchers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "blogs" | "vouchers">("orders");
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -77,8 +77,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
       const res = await getAllOrders({ limit: 50 });
       const list = Array.isArray(res) ? res : (res as any).data || [];
       setOrders(list as OrderItem[]);
-    } catch (error) {
-      console.log(error)
+    } catch {
       setOrdersError("Failed to load orders. Please try again.");
     } finally {
       setOrdersLoading(false);
@@ -99,8 +98,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           sold: Number(p.sold ?? 0),
         }))
       );
-    } catch (error) {
-      console.log(error)
+    } catch {
       setProductsError("Failed to load inventory. Please try again.");
     } finally {
       setProductsLoading(false);
@@ -184,7 +182,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
     }
   };
 
-  const activeTabClasses = (tab: "orders" | "inventory" | "support" | "blogs" | "vouchers") =>
+  const activeTabClasses = (tab: "orders" | "inventory" | "blogs" | "vouchers") =>
     activeTab === tab
       ? "bg-slate-900 text-white shadow"
       : "bg-white/80 text-foreground border border-transparent hover:bg-white";
@@ -199,7 +197,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
             </div>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight">Staff Operations</h1>
             <p className="mt-3 text-base text-muted-foreground max-w-xl">
-              Track and action customer orders, monitor inventory levels, and respond to support requests from one place.
+              Track and action customer orders, monitor inventory levels.
             </p>
           </div>
 
@@ -254,7 +252,6 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
         <div className="flex flex-wrap gap-3 rounded-2xl bg-white/70 p-3 shadow-sm w-fit">
           <Button className={activeTabClasses("orders")} onClick={() => setActiveTab("orders")}>Orders</Button>
           <Button className={activeTabClasses("inventory")} onClick={() => setActiveTab("inventory")}>Inventory</Button>
-          <Button className={activeTabClasses("support")} onClick={() => setActiveTab("support")}>Support</Button>
           <Button className={activeTabClasses("vouchers")} onClick={() => setActiveTab("vouchers")}>Vouchers</Button>
           <Button className={activeTabClasses("blogs")} onClick={() => setActiveTab("blogs")}>Blogs</Button>
         </div>
@@ -319,17 +316,26 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                                 </td>
                                 <td className="px-4 py-3 text-sm">
                                   {isAdmin ? (
-                                    <select
-                                      value={order.status}
-                                      onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                                      className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                                    >
-                                      {Object.entries(ORDER_STATUS_LABEL).map(([key, label]) => (
-                                        <option key={key} value={key}>
-                                          {label}
-                                        </option>
-                                      ))}
-                                    </select>
+                                    order.status === "delivered" || order.status === "canceled" ? (
+                                      // Delivered/canceled orders are final — show locked badge
+                                      <Badge variant="secondary" className="capitalize">
+                                        {ORDER_STATUS_LABEL[order.status] || order.status}
+                                      </Badge>
+                                    ) : (
+                                      <select
+                                        value={order.status}
+                                        onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                                        className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                      >
+                                        {Object.entries(ORDER_STATUS_LABEL)
+                                          .filter(([key]) => key !== "canceled") // cancel via button only
+                                          .map(([key, label]) => (
+                                            <option key={key} value={key}>
+                                              {label}
+                                            </option>
+                                          ))}
+                                      </select>
+                                    )
                                   ) : (
                                     <Badge variant="secondary" className="capitalize">
                                       {ORDER_STATUS_LABEL[order.status] || order.status}
@@ -362,9 +368,12 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                                         </Button>
                                       )
                                     )}
-                                    <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order._id)}>
-                                      Cancel
-                                    </Button>
+                                    {/* Cancel: only allowed before delivery */}
+                                    {order.status !== "delivered" && order.status !== "canceled" && (
+                                      <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order._id)}>
+                                        Cancel
+                                      </Button>
+                                    )}
                                     <Button size="sm" variant="ghost" onClick={() => {
                                       setSelectedOrderId(order._id)
                                       setOrderNote("")
@@ -461,75 +470,7 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
           )}
 
 
-          {activeTab === "support" && (
-            <Card className="border-0 shadow-lg shadow-slate-100">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Customer support</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Use this tab to handle cancellations, refunds and customer issues.
-                </p>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="border border-slate-100 bg-white">
-                    <CardHeader>
-                      <CardTitle className="text-base">Refund / Cancel</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Pick an order from the Orders tab and use the Cancel button to issue a refund.
-                      </p>
-                      <Button variant="outline" onClick={() => setActiveTab("orders")}>Go to Orders</Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border border-slate-100 bg-white">
-                    <CardHeader>
-                      <CardTitle className="text-base">Issue notes</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Select an order and add a note to track conversations or customer requests.
-                      </p>
-                      <textarea
-                        value={orderNote}
-                        onChange={(e) => setOrderNote(e.target.value)}
-                        placeholder="Add a quick note for the order..."
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 h-28 resize-none focus:outline-none focus:ring-2 focus:ring-slate-200"
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (!selectedOrderId) return;
-                            alert("Note saved locally. Backend does not store notes yet.");
-                          }}
-                        >
-                          Save Note
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedOrderId(null);
-                            setOrderNote("");
-                          }}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                      {selectedOrderId && (
-                        <div className="text-xs text-muted-foreground">
-                          Editing note for order <span className="font-semibold">{selectedOrderId}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {activeTab === "vouchers" && (
             <div className="mt-4">

@@ -86,21 +86,3 @@ export const updateUserByAdmin = authService.updateUserByAdmin;
 export const deleteUser = authService.deleteUser;
 export const redeemCoupon = authService.redeemCoupon;
 
-// If explicitly called by some component, redirect to standard logout to clear everything
-export const refreshAccessToken = async () => {
-  try {
-    const data: any = await axiosInstance.post('/users/auth/refresh-token');
-    const newAccessToken = data.accessToken || data.data?.accessToken;
-    if (newAccessToken) {
-      if (localStorage.getItem('accessToken')) {
-        localStorage.setItem('accessToken', newAccessToken);
-      } else {
-        sessionStorage.setItem('accessToken', newAccessToken);
-      }
-    }
-    return data;
-  } catch (error) {
-    console.error('Refresh token error:', error);
-    throw error;
-  }
-};

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+
 import { getOrderById, getMyOrders } from "@/services/orderService";
 import { getProductById, addRating } from "@/services/productService";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Star, ArrowLeft, Package, MapPin, Calendar, Tag, Percent } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import { formatVND } from "@/lib/currency";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -18,29 +19,55 @@ const STATUS_COLOR: Record<string, string> = {
   canceled: "bg-red-100 text-red-700 border-red-200",
 };
 
-function ProductRow({ item, isDelivered, userId }: { item: { productId: string; count: number }; isDelivered: boolean; userId?: string }) {
+type ProductRowProps = {
+  item: { productId: string; count: number };
+  isDelivered: boolean;
+};
+
+function ProductRow({ item, isDelivered }: ProductRowProps) {
   const [product, setProduct] = useState<any>(null);
   const [showReview, setShowReview] = useState(false);
   const [star, setStar] = useState(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    getProductById(item.productId).then(res => { if (mounted) setProduct(res.data || res); }).catch(() => { });
+    getProductById(item.productId)
+      .then(res => { if (mounted) setProduct(res.data || res); })
+      .catch(() => { });
     return () => { mounted = false; };
   }, [item.productId]);
 
   const handleReview = async () => {
     if (!product || submitting) return;
     setSubmitting(true);
+    setReviewError(null);
     try {
       await addRating(product._id || product.id, { star, comment: comment.trim() || undefined });
       setSubmitted(true);
       setShowReview(false);
-    } catch { alert("Failed to submit review."); }
-    finally { setSubmitting(false); }
+    } catch (err: any) {
+      // The axios interceptor converts all errors to plain `new Error(message)`,
+      // stripping err.response. So we cannot rely on err.response.status === 409.
+      // Instead detect "already rated" from the server's error message.
+      const msg: string = err?.message || "";
+      const alreadyRated =
+        msg.toLowerCase().includes("already") ||
+        msg.includes("đã đánh giá") ||
+        msg.includes("ALREADY_RATED");
+      if (alreadyRated) {
+        // Treat as success — the product already has a review from this user
+        setSubmitted(true);
+        setShowReview(false);
+      } else {
+        setReviewError(msg || "Failed to submit review. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!product) return <div className="text-xs text-muted-foreground py-3 border-b last:border-0">Loading...</div>;
@@ -48,11 +75,12 @@ function ProductRow({ item, isDelivered, userId }: { item: { productId: string; 
   const img = typeof product.image === "string" && product.image ? product.image
     : Array.isArray(product.images) && product.images.length > 0 ? product.images[0]
       : typeof product.images === "string" && product.images ? product.images
-        : "https://placehold.co/100x100?text=MomCare";
+        : "https://placehold.co/100x100?text=MumCare";
 
-  const hasReviewed = product.ratings?.some((r: any) => r.postedBy === userId);
-  const canReview = isDelivered && !submitted && !hasReviewed;
-  const showReviewedBadge = submitted || hasReviewed;
+  // Show badge / button only on delivered orders, based solely on this session's submit.
+  // On 409 the handleReview sets submitted=true, so badge still appears if already reviewed.
+  const canReview = isDelivered && !submitted;
+  const showReviewedBadge = isDelivered && submitted;
 
   return (
     <div className="flex items-center gap-4 py-4 border-b last:border-0">
@@ -60,15 +88,26 @@ function ProductRow({ item, isDelivered, userId }: { item: { productId: string; 
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-slate-800 truncate">{product.title || product.name}</div>
         <div className="text-sm text-muted-foreground mt-0.5">Qty: {item.count}</div>
-        <div className="text-sm font-medium text-slate-700 mt-0.5">${Number(product.price * item.count).toFixed(2)}</div>
+        <div className="text-sm font-medium text-slate-700 mt-0.5">
+          {formatVND(Number(product.price) * item.count)}
+        </div>
       </div>
       <div className="flex flex-col items-end gap-2">
         {canReview && (
-          <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => setShowReview(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
+            onClick={() => setShowReview(true)}
+          >
             Leave Review
           </Button>
         )}
-        {showReviewedBadge && <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-emerald-200">Reviewed</Badge>}
+        {showReviewedBadge && (
+          <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-emerald-200">
+            Reviewed
+          </Badge>
+        )}
       </div>
 
       <Dialog open={showReview} onOpenChange={setShowReview}>
@@ -93,6 +132,9 @@ function ProductRow({ item, isDelivered, userId }: { item: { productId: string; 
                 {submitting ? "Submitting..." : "Submit"}
               </Button>
             </div>
+            {reviewError && (
+              <p className="text-sm text-red-500 text-center mt-1">{reviewError}</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -100,26 +142,27 @@ function ProductRow({ item, isDelivered, userId }: { item: { productId: string; 
   );
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+
 
   useEffect(() => {
     if (!orderId) return;
     setLoading(true);
     (async () => {
       try {
-        // Try fetching by ID first, fall back to searching in my orders
         let found: any = null;
         try {
           const res = await getOrderById(orderId);
           found = res.data || res;
         } catch {
-          // Fallback: search in my orders list
           const allRes = await getMyOrders();
           const all = Array.isArray(allRes) ? allRes : (allRes.data || []);
           found = all.find((o: any) => o._id === orderId);
@@ -152,6 +195,7 @@ export function OrderDetailPage() {
   const statusColor = STATUS_COLOR[order.status] || "bg-slate-100 text-slate-600";
   const isDelivered = order.status === "delivered";
   const hasDiscount = (order.discountAmount || 0) > 0;
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
@@ -200,7 +244,9 @@ export function OrderDetailPage() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Order Date</div>
                   <div className="font-medium text-slate-800">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
+                      : "—"}
                   </div>
                 </div>
               </div>
@@ -218,7 +264,9 @@ export function OrderDetailPage() {
                   <Percent className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
                   <div>
                     <div className="text-xs text-muted-foreground mb-0.5">Discount Amount</div>
-                    <div className="font-semibold text-orange-600">-${Number(order.discountAmount).toFixed(2)}</div>
+                    <div className="font-semibold text-orange-600">
+                      – {formatVND(Number(order.discountAmount))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -231,13 +279,13 @@ export function OrderDetailPage() {
                   {hasDiscount ? "Final Total (after discount)" : "Total Amount"}
                 </span>
                 <span className="text-xl font-bold text-slate-800">
-                  ${Number(order.finalTotal ?? 0).toFixed(2)}
+                  {formatVND(Number(order.finalTotal ?? 0))}
                 </span>
               </div>
               {hasDiscount && (
                 <div className="flex justify-end mt-1">
                   <span className="text-xs text-emerald-600 font-medium">
-                    You saved ${Number(order.discountAmount).toFixed(2)}
+                    You saved {formatVND(Number(order.discountAmount))}
                   </span>
                 </div>
               )}
@@ -259,7 +307,6 @@ export function OrderDetailPage() {
                   key={`${item.productId}-${idx}`}
                   item={item}
                   isDelivered={isDelivered}
-                  userId={user?._id || user?.id}
                 />
               ))
             ) : (

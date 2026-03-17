@@ -174,8 +174,8 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
   const handleStatusUpdate = async (orderId: string, status: string) => {
     const order = orders.find((o) => o._id === orderId);
 
-    if (order && order.status === "canceled" && status !== "canceled") {
-      setOrdersError("Cannot change status from canceled.");
+    if (order && (order.status === "canceled" || order.status === "delivered")) {
+      setOrdersError("Cannot change status of a delivered or canceled order.");
       return;
     }
 
@@ -208,55 +208,27 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
   return (
     <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
       <div className="container mx-auto px-4 py-10 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
-          <div>
+        <div className="mb-8">
+          <div className="flex items-center gap-4">
             <div className="inline-flex items-center gap-3 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 shadow-sm">
               Admin Control Center
             </div>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight">Dashboard Overview</h1>
-            <p className="mt-3 text-base text-muted-foreground max-w-xl">
-              Manage users, products, orders and monitor store performance.
-            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onLogout();
+                navigate("/login");
+              }}
+              className="h-8 rounded-full px-4 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white/50"
+            >
+              Logout
+            </Button>
           </div>
-
-          <Card className="border border-white/40 bg-white/70 backdrop-blur-sm shadow-lg shadow-indigo-200/40">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Admin Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
-                  {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A"}
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Signed in as</div>
-                  <div className="font-semibold text-lg">
-                    {user?.firstName || "Admin"} {user?.lastName || ""}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium text-right">{user?.email || "Unknown"}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Role</span>
-                  <Badge variant="secondary">Administrator</Badge>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  onLogout();
-                  navigate("/login");
-                }}
-                className="w-full"
-              >
-                Logout
-              </Button>
-            </CardContent>
-          </Card>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Dashboard Overview</h1>
+          <p className="mt-3 text-base text-muted-foreground max-w-xl">
+            Manage users, products, orders and monitor store performance.
+          </p>
         </div>
 
         {/* TABS */}
@@ -314,24 +286,39 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        handleStatusUpdate(order._id, e.target.value)
-                      }
-                      className="border rounded px-3 py-1.5 min-w-30 bg-slate-50 text-sm font-medium"
-                    >
-                      {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
-                        <option key={k} value={k}>{v}</option>
-                      ))}
-                    </select>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteOrder(order._id)}
-                    >
-                      Delete
-                    </Button>
+                    {order.status === "delivered" || order.status === "canceled" ? (
+                      <Badge
+                        variant="secondary"
+                        className={`capitalize px-3 py-1.5 text-sm font-medium ${
+                          order.status === "delivered"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-red-50 text-red-600 border border-red-200"
+                        }`}
+                      >
+                        {ORDER_STATUS_LABEL[order.status]}
+                      </Badge>
+                    ) : (
+                      <>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                          className="border rounded px-3 py-1.5 min-w-30 bg-slate-50 text-sm font-medium"
+                        >
+                          {Object.entries(ORDER_STATUS_LABEL)
+                            .filter(([k]) => k !== "canceled")
+                            .map(([k, v]) => (
+                              <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteOrder(order._id)}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

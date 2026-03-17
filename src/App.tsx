@@ -222,7 +222,7 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
 
       <Route
         path="/cart"
-        element={<CartPage items={cart.items} onUpdateQuantity={cart.updateQuantity} onRemoveItem={cart.removeItem} />}
+        element={<CartPage isLoggedIn={auth.isLoggedIn} items={cart.items} onUpdateQuantity={cart.updateQuantity} onRemoveItem={cart.removeItem} clearCart={cart.clearCart} />}
       />
       <Route path="/checkout" element={<CheckoutPage isLoggedIn={auth.isLoggedIn} cartItems={cart.items} clearCart={cart.clearCart} />} />
       <Route path="/orders" element={<OrdersPage />} />

@@ -125,18 +125,35 @@ export default function AdminOrderManagementPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 mt-4">
-              <select
-                value={order.status}
-                onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-200"
-              >
-                {Object.entries(ORDER_STATUS_LABEL).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-              <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
-                Delete
-              </Button>
+              {order.status === "delivered" || order.status === "canceled" ? (
+                <Badge
+                  variant="secondary"
+                  className={`capitalize px-3 py-1 ${
+                    order.status === "delivered"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {ORDER_STATUS_LABEL[order.status as keyof typeof ORDER_STATUS_LABEL]}
+                </Badge>
+              ) : (
+                <>
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  >
+                    {Object.entries(ORDER_STATUS_LABEL)
+                      .filter(([key]) => key !== "canceled")
+                      .map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                  </select>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
+                    Delete
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ))}
