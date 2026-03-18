@@ -1,27 +1,47 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Package2,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Category, Product } from "@/types/product";
-import { getProductsWithPagination, getCategories } from "@/services/productService";
-import { resolvePageRoute } from "@/lib/pageRoutes";
 import { formatVND } from "@/lib/currency";
+import { extractImageUrl, normalizeImageList } from "@/lib/image";
+import { resolvePageRoute } from "@/lib/pageRoutes";
+import { getCategories, getProductsWithPagination } from "@/services/productService";
+import type { Category, Product } from "@/types/product";
 
 interface ProductListPageProps {
   isLoggedIn?: boolean;
   user?: { firstName?: string; lastName?: string; email?: string };
   onLogoutClick?: () => void;
+  cartItemCount?: number;
+  onAddToCart?: (product: Product) => boolean | void;
+  onCartClick?: () => void;
 }
+
+const getProductImage = (product: Product) => {
+  const images = normalizeImageList(product.images);
+  return extractImageUrl(product.image) || images[0] || "https://placehold.co/600x400?text=MumCare";
+};
+
+const normalizeCategoryName = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export function ProductListPage({
   isLoggedIn = false,
   user,
   onLogoutClick,
+  cartItemCount = 0,
+  onAddToCart,
+  onCartClick,
 }: ProductListPageProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,8 +55,6 @@ export function ProductListPage({
   const [hasCategoryOverflow, setHasCategoryOverflow] = useState(false);
   const [canSlideLeft, setCanSlideLeft] = useState(false);
   const [canSlideRight, setCanSlideRight] = useState(false);
-  // simple placeholder if you later want to show add-to-cart messages
-  const [addedMessage] = useState<string | null>(null);
   const categoryRailRef = useRef<HTMLDivElement | null>(null);
 
   const page = Math.max(1, Number(searchParams.get("page") || "1") || 1);
@@ -44,36 +62,21 @@ export function ProductListPage({
   const categoryId = searchParams.get("categoryId") || "";
   const search = searchParams.get("search") || "";
 
-  const [searchDraft, setSearchDraft] = useState(search);
-
-  const toTwoLinePreview = (value: string, maxChars = 88) => {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    if (normalized.length <= maxChars) return normalized;
-    return `${normalized.slice(0, maxChars).trimEnd()}...`;
-  };
-
-  const pagination = useMemo(() => {
-    return {
+  const pagination = useMemo(
+    () => ({
       page,
       limit,
-    };
-  }, [page, limit]);
+    }),
+    [page, limit],
+  );
+
+  const activeCategory = useMemo(
+    () => categories.find((category) => category._id === categoryId) || null,
+    [categories, categoryId],
+  );
 
   const handleNavigate = (pageKey: string) => {
-    if (pageKey === "home") navigate("/");
-    else if (pageKey === "products") navigate("/products");
-    else if (pageKey === "profile") navigate("/profile");
-    else if (pageKey === "orders") navigate("/orders");
-    else if (pageKey === "reviews") navigate("/reviews");
-    else if (pageKey === "loyalty") navigate("/loyalty");
-    else if (pageKey === "blogs") navigate("/blogs");
-    else if (pageKey === "cart") navigate("/cart");
-    else if (pageKey === "contact") navigate("/contact");
-    else if (pageKey === "about") navigate("/about");
-    else if (pageKey === "staff-login") navigate("/staff/login");
-    else if (pageKey === "admin_dashboard") navigate("/admin/dashboard");
-    else if (pageKey === "admin_blogs") navigate("/admin/blogs");
-    else navigate("/");
+    navigate(resolvePageRoute(pageKey));
   };
 
   const setParam = (key: string, value: string) => {
@@ -84,8 +87,16 @@ export function ProductListPage({
     setSearchParams(next);
   };
 
+  const clearSearch = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("search");
+    next.delete("page");
+    setSearchParams(next);
+  };
+
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         const res = await getCategories();
@@ -97,14 +108,16 @@ export function ProductListPage({
           name?: string;
           title?: string;
         }>;
-        const cats: Category[] = raw.map((c) => ({
-          _id: c._id || c.id || "",
-          id: c._id || c.id || "",
-          name: c.name || c.title || "",
-        }));
-        // áº¨n category "Bá»‰m" khá»i UI (váº«n giá»¯ trong DB)
-        const visibleCats = cats.filter((c) => c._id && c.name !== "Bá»‰m");
-        if (mounted) setCategories(visibleCats);
+
+        const visibleCategories: Category[] = raw
+          .map((category) => ({
+            _id: category._id || category.id || "",
+            id: category._id || category.id || "",
+            name: category.name || category.title || "",
+          }))
+          .filter((category) => category._id && normalizeCategoryName(category.name) !== "bim");
+
+        if (mounted) setCategories(visibleCategories);
       } catch {
         if (mounted) setCategories([]);
       }
@@ -139,34 +152,33 @@ export function ProductListPage({
           images?: string[] | null;
         }>;
 
-        let items: Product[] = raw.map((p) => ({
-          _id: p._id || p.id || "",
-          id: p._id || p.id,
-          title: p.title,
-          name: p.title || p.name || "",
-          description: p.description || "",
-          brand: p.brand || "",
-          price: Number(p.price) || 0,
-          images: p.images || [],
-          image: Array.isArray(p.images) && p.images.length ? p.images[0] : "",
+        let items: Product[] = raw.map((product) => ({
+          _id: product._id || product.id || "",
+          id: product._id || product.id,
+          title: product.title,
+          name: product.title || product.name || "",
+          description: product.description || "",
+          brand: product.brand || "",
+          price: Number(product.price) || 0,
+          images: product.images || [],
+          image: Array.isArray(product.images) && product.images.length ? product.images[0] : "",
         }));
 
-        // Search theo tÃªn product á»Ÿ client Ä‘á»ƒ trÃ¡nh lá»—i 422 tá»« server
         if (search) {
           const keyword = search.toLowerCase();
-          items = items.filter((p) =>
-            (p.title || p.name || "").toLowerCase().includes(keyword)
+          items = items.filter((product) =>
+            (product.title || product.name || "").toLowerCase().includes(keyword),
           );
         }
 
         const rawPagination = res.pagination || {};
         const parsedTotalItems = Number(
-          rawPagination.totalItems ?? rawPagination.total ?? items.length ?? 0
+          rawPagination.totalItems ?? rawPagination.total ?? items.length ?? 0,
         );
         const safeLimit = Math.max(1, pagination.limit || 1);
         const fallbackTotalPages = Math.ceil(parsedTotalItems / safeLimit);
         const parsedTotalPages = Number(
-          rawPagination.totalPages ?? fallbackTotalPages ?? 1
+          rawPagination.totalPages ?? fallbackTotalPages ?? 1,
         );
         const normalizedTotalPages = Math.max(parsedTotalPages || 1, 1);
 
@@ -181,13 +193,13 @@ export function ProductListPage({
             setSearchParams(next);
           }
         }
-      } catch (error) {
+      } catch (fetchError) {
         if (mounted) {
           setError("Failed to load products. Please try again.");
           setProducts([]);
           setTotalItems(0);
           setTotalPages(1);
-          console.log(error);
+          console.error(fetchError);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -211,9 +223,7 @@ export function ProductListPage({
     const hasOverflow = rail.scrollWidth > rail.clientWidth + 2;
     setHasCategoryOverflow(hasOverflow);
     setCanSlideLeft(hasOverflow && rail.scrollLeft > 2);
-    setCanSlideRight(
-      hasOverflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2
-    );
+    setCanSlideRight(hasOverflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2);
   };
 
   useEffect(() => {
@@ -243,11 +253,25 @@ export function ProductListPage({
     });
   };
 
+  const visibleProductCount = products.length;
+
+  const summaryText = loading
+    ? "Loading products..."
+    : visibleProductCount > 0
+      ? `${visibleProductCount} products currently visible`
+      : "No products match the current filters";
+
+  const toTwoLinePreview = (value: string, maxChars = 92) => {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (normalized.length <= maxChars) return normalized;
+    return `${normalized.slice(0, maxChars).trimEnd()}...`;
+  };
+
   return (
-    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(255,248,250,1),rgba(255,255,255,0.96),rgba(239,246,255,0.92))]">
       <Header
-        cartItemCount={0}
-        onCartClick={() => navigate("/cart")}
+        cartItemCount={cartItemCount}
+        onCartClick={onCartClick || (() => navigate("/cart"))}
         onLoginClick={() => navigate("/login")}
         onRegisterClick={() => navigate("/register")}
         isLoggedIn={isLoggedIn}
@@ -256,11 +280,30 @@ export function ProductListPage({
         onLogout={onLogoutClick}
       />
 
-      <div className="container mx-auto px-4 pb-4">
-        <div className="flex flex-col gap-6">
+      <main className="container mx-auto px-4 pb-10 pt-8">
+        <section className="rounded-[30px] border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm md:p-5">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Filter by category
+                </p>
+                <p className="mt-1 text-sm text-slate-500">{summaryText}</p>
+              </div>
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.45fr)] xl:items-stretch xl:gap-4">
-            <div className="flex min-h-[74px] w-full items-center gap-2">
+              {search ? (
+                <Button
+                  variant="outline"
+                  className="h-10 rounded-full border-slate-200 bg-white px-4 text-slate-600 hover:bg-slate-50"
+                  onClick={clearSearch}
+                >
+                  <X className="h-4 w-4" />
+                  Clear search
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-2">
               {hasCategoryOverflow ? (
                 <Button
                   type="button"
@@ -268,32 +311,29 @@ export function ProductListPage({
                   size="icon"
                   onClick={() => slideCategories("left")}
                   disabled={!canSlideLeft}
-                  className="h-10 w-10 shrink-0"
+                  className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-white shadow-sm"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               ) : null}
 
-              <div
-                ref={categoryRailRef}
-                className="flex-1 overflow-x-auto scroll-smooth"
-              >
+              <div ref={categoryRailRef} className="flex-1 overflow-x-auto scroll-smooth">
                 <div className="inline-flex min-w-max gap-2 pr-1">
                   <Badge
                     variant={categoryId ? "secondary" : "default"}
-                    className="cursor-pointer px-3 py-1.5 text-sm"
+                    className="cursor-pointer rounded-full px-4 py-2.5 text-sm font-semibold"
                     onClick={() => setParam("categoryId", "")}
                   >
-                    All
+                    All products
                   </Badge>
-                  {categories.map((c) => (
+                  {categories.map((category) => (
                     <Badge
-                      key={c._id}
-                      variant={categoryId === c._id ? "default" : "secondary"}
-                      className="cursor-pointer px-3 py-1.5 text-sm"
-                      onClick={() => setParam("categoryId", c._id)}
+                      key={category._id}
+                      variant={categoryId === category._id ? "default" : "secondary"}
+                      className="cursor-pointer rounded-full px-4 py-2.5 text-sm font-semibold"
+                      onClick={() => setParam("categoryId", category._id)}
                     >
-                      {c.name}
+                      {category.name}
                     </Badge>
                   ))}
                 </div>
@@ -306,136 +346,147 @@ export function ProductListPage({
                   size="icon"
                   onClick={() => slideCategories("right")}
                   disabled={!canSlideRight}
-                  className="h-10 w-10 shrink-0"
+                  className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-white shadow-sm"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : null}
             </div>
 
-            <div className="flex min-h-[74px] w-full items-center">
-              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
-                <input
-                  value={searchDraft}
-                  onChange={(e) => setSearchDraft(e.target.value)}
-                  placeholder="Search products..."
-                  className="h-10 flex-1 rounded-md border bg-background px-4 text-base"
-                />
-                <Button
-                  variant="outline"
-                  className="h-10 px-5"
-                  onClick={() => {
-                    const trimmed = searchDraft.trim();
-                    const next = new URLSearchParams(searchParams);
-                    if (trimmed) {
-                      next.set("search", trimmed);
-                      // Search by product name without forcing category filter.
-                      next.delete("categoryId");
-                    } else {
-                      next.delete("search");
-                    }
-                    next.delete("page");
-                    setSearchParams(next);
-                  }}
-                >
-                  Search
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="h-10 border border-slate-200 bg-white px-4 hover:bg-slate-50"
-                  onClick={() => {
-                    setSearchDraft("");
-                    const next = new URLSearchParams(searchParams);
-                    next.delete("search");
-                    next.delete("page");
-                    setSearchParams(next);
-                  }}
-                >
-                  Clear
-                </Button>
+            {search ? (
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm text-sky-700">
+                Showing products filtered by <span className="font-semibold">{`"${search}"`}</span>. Category chips will continue refining these results.
               </div>
-            </div>
+            ) : null}
           </div>
-        </div>
+        </section>
 
-        {addedMessage && (
-          <div className="mb-4 p-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm">
-            {addedMessage}
-          </div>
-        )}
-
-        <div>
+        <section className="mt-8">
           {error && (
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="py-16 text-center text-muted-foreground">
+            <div className="rounded-[30px] border border-slate-200/80 bg-white/80 py-24 text-center text-muted-foreground shadow-sm">
               Loading products...
             </div>
+          ) : products.length === 0 ? (
+            <div className="rounded-[32px] border border-slate-200/80 bg-white/85 p-8 text-center shadow-sm">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-50 text-slate-400 shadow-sm">
+                <Package2 className="h-8 w-8" />
+              </div>
+              <h2 className="mt-5 text-2xl font-black text-slate-900">No matching products found</h2>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-500">
+                Try switching to another category or clear the current search to explore the full MumCare collection.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                {categoryId ? (
+                  <Button
+                    variant="outline"
+                    className="rounded-full bg-white"
+                    onClick={() => setParam("categoryId", "")}
+                  >
+                    Show all categories
+                  </Button>
+                ) : null}
+                {search ? (
+                  <Button
+                    className="rounded-full bg-slate-900 text-white hover:bg-slate-800"
+                    onClick={clearSearch}
+                  >
+                    Clear search
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((p) => (
-                <Card
-                  key={p._id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    navigate(`/products/${p._id}`);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      navigate(`/products/${p._id}`);
-                    }
-                  }}
-                  className="group cursor-pointer overflow-hidden border-0 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:translate-y-0 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 flex h-full select-none flex-col"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 p-3">
-                    <ImageWithFallback
-                      src={
-                        typeof p.image === "string" && p.image
-                          ? p.image
-                          : Array.isArray(p.images) && p.images.length
-                            ? p.images[0]
-                            : typeof p.images === "string" && p.images
-                              ? p.images
-                          : "https://placehold.co/600x400?text=MumCare"
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {products.map((product, index) => {
+                const label =
+                  product.tags?.[0] ||
+                  (activeCategory?.name ? `${activeCategory.name} pick` : index === 0 ? "Best Seller" : "Featured");
+
+                return (
+                  <Card
+                    key={product._id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/products/${product._id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/products/${product._id}`);
                       }
-                      alt={p.title || p.name || "Product image"}
-                      className="h-full w-full object-contain mix-blend-multiply transition-opacity duration-300"
-                    />
-                  </div>
-                  <CardContent className="flex grow flex-col p-4">
-                    {p.brand && (
-                      <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {p.brand}
-                      </p>
-                    )}
-                    <h3 className="mb-1 line-clamp-2 text-base font-bold text-slate-800">
-                      {p.title || p.name}
-                    </h3>
-                    <p className="mb-3 h-12 grow overflow-hidden text-sm leading-6 text-slate-500">
-                      {toTwoLinePreview(
-                        p.description || "Premium product from MumCare."
-                      )}
-                    </p>
-                    <div className="mt-auto flex items-center border-t border-slate-100 pt-3">
-                      <span className="text-lg font-extrabold text-pink-600">
-                        {formatVND(Number(p.price))}
-                      </span>
+                    }}
+                    className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[30px] border border-white/80 bg-white/88 shadow-[0_28px_72px_-50px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_38px_88px_-50px_rgba(15,23,42,0.42)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    <div className="relative aspect-4/3 overflow-hidden bg-[linear-gradient(180deg,rgba(248,250,252,1),rgba(241,245,249,0.92))] p-5">
+                      <div className="absolute left-4 top-4 z-10">
+                        <Badge className="rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
+                          {label}
+                        </Badge>
+                      </div>
+                      <ImageWithFallback
+                        src={getProductImage(product)}
+                        alt={product.title || product.name || "Product image"}
+                        className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+                    <CardContent className="flex grow flex-col p-5">
+                      {product.brand && (
+                        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          {product.brand}
+                        </p>
+                      )}
+                      <h3 className="line-clamp-2 text-lg font-black text-slate-900">
+                        {product.title || product.name}
+                      </h3>
+                      <p className="mt-3 grow text-sm leading-7 text-slate-500">
+                        {toTwoLinePreview(product.description || "Premium product from MumCare.")}
+                      </p>
+
+                      <div className="mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">Price</p>
+                          <p className="mt-1 text-2xl font-black text-pink-600">
+                            {formatVND(Number(product.price))}
+                          </p>
+                        </div>
+                        <div
+                          className="flex shrink-0 items-center gap-1.5 self-end"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <Button
+                            variant="outline"
+                            className="h-8 rounded-full bg-white px-3 text-[12px] font-semibold"
+                            onClick={() => {
+                              onAddToCart?.(product);
+                            }}
+                          >
+                            Add to cart
+                          </Button>
+                          <Button
+                            className="h-8 rounded-full bg-slate-900 px-3 text-[12px] font-semibold text-white hover:bg-slate-800"
+                            onClick={() => navigate(`/products/${product._id}`)}
+                          >
+                            View details
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
 
-          <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="mt-10 flex items-center justify-center gap-2">
             <Button
               variant="outline"
+              className="rounded-full bg-white px-5"
               disabled={page <= 1 || loading}
               onClick={() => {
                 const next = new URLSearchParams(searchParams);
@@ -445,11 +496,12 @@ export function ProductListPage({
             >
               Prev
             </Button>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="rounded-full px-4 py-2 text-sm">
               Page {Math.min(page, totalPages)} / {totalPages}
             </Badge>
             <Button
               variant="outline"
+              className="rounded-full bg-white px-5"
               disabled={loading || totalItems === 0 || page >= totalPages}
               onClick={() => {
                 const next = new URLSearchParams(searchParams);
@@ -460,11 +512,10 @@ export function ProductListPage({
               Next
             </Button>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
       <Footer setCurrentPage={handleNavigate} />
     </div>
   );
 }
-

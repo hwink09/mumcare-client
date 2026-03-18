@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import { extractImageUrl, normalizeImageList } from "@/lib/image";
 import type { Product } from "@/types/product";
 import { formatVND } from "@/lib/currency";
-import { createOrder } from "@/services/orderService";
+import { createOrder, getMyOrders } from "@/services/orderService";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
 import couponService from "@/services/couponService";
 
@@ -48,10 +49,9 @@ export function CartPage({
     if (!isLoggedIn) return;
     (async () => {
       try {
-        const { default: orderService } = await import("@/services/orderService");
         const [couponsRes, ordersRes] = await Promise.all([
           couponService.getMyCoupons(),
-          orderService.getMyOrders(),
+          getMyOrders(),
         ]);
         const coupons: any[] = Array.isArray(couponsRes) ? couponsRes : (couponsRes as any)?.data || [];
         const orders: any[] = Array.isArray(ordersRes) ? ordersRes : (ordersRes as any)?.data || [];
@@ -74,9 +74,15 @@ export function CartPage({
   const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.quantity, 0), [items]);
   const shipping = subtotal > 500_000 ? 0 : items.length > 0 ? 30_000 : 0;
   const discountAmount = useMemo(() => Math.floor((subtotal * appliedDiscount) / 100), [subtotal, appliedDiscount]);
-  const total = subtotal + shipping - discountAmount;
+  const totalBeforeDiscount = subtotal + shipping;
+  const total = totalBeforeDiscount - discountAmount;
 
   const canSubmit = address.trim().length >= 3 && items.length > 0;
+
+  const getCartItemImage = (item: CartItem) => {
+    const imageList = normalizeImageList(item.images);
+    return extractImageUrl(item.image) || imageList[0] || "https://placehold.co/600x400?text=MumCare";
+  };
 
   // ── Apply voucher ───────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
@@ -107,7 +113,7 @@ export function CartPage({
       const savedAmt = Math.floor((subtotal * found.discount) / 100);
       setCouponMessage({
         type: "success",
-        text: `Applied! ${found.discount}% off – you save ${formatVND(savedAmt)}.`,
+        text: `Applied! ${found.discount}% off - you save ${formatVND(savedAmt)}.`,
       });
     } catch (err: any) {
       setCouponMessage({ type: "error", text: err.message || "Failed to validate voucher." });
@@ -150,7 +156,7 @@ export function CartPage({
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -193,15 +199,7 @@ export function CartPage({
                     <div className="flex gap-4">
                       <div className="w-24 h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                         <ImageWithFallback
-                          src={
-                            typeof item.image === "string" && item.image
-                              ? item.image
-                              : Array.isArray(item.images) && item.images.length
-                                ? item.images[0]
-                                : typeof item.images === "string" && item.images
-                                  ? item.images
-                                  : "https://placehold.co/600x400?text=MumCare"
-                          }
+                          src={getCartItemImage(item)}
                           alt={item.title || item.name || "Product image"}
                           className="w-full h-full object-cover"
                         />
@@ -258,7 +256,7 @@ export function CartPage({
                 </CardHeader>
                 <CardContent>
                   <textarea
-                    className="w-full min-h-[96px] rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all resize-none"
+                    className="w-full min-h-24 rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all resize-none"
                     placeholder="Enter full address (house number, street, ward, district, city...)"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -308,7 +306,7 @@ export function CartPage({
                             value={c.name}
                             disabled={c.isExpired || new Date(c.expiry) < new Date()}
                           >
-                            {c.name} – {c.discount}% OFF (Exp: {new Date(c.expiry).toLocaleDateString()})
+                            {c.name} - {c.discount}% OFF (Exp: {new Date(c.expiry).toLocaleDateString()})
                           </option>
                         ))}
                       </select>
@@ -347,17 +345,25 @@ export function CartPage({
                     </div>
                     {appliedDiscount > 0 && (
                       <div className="flex justify-between text-emerald-600 font-medium">
-                        <span>Discount ({appliedCouponName} – {appliedDiscount}%)</span>
-                        <span>– {formatVND(discountAmount)}</span>
+                        <span>Discount ({appliedCouponName} - {appliedDiscount}%)</span>
+                        <span>- {formatVND(discountAmount)}</span>
                       </div>
                     )}
                     <div className="border-t pt-3 flex justify-between font-bold text-base">
-                      <span>Total</span>
-                      <span className="text-pink-600 text-lg">{formatVND(total)}</span>
+                      <span>{appliedDiscount > 0 ? "Total Before Voucher" : "Total"}</span>
+                      <span className={appliedDiscount > 0 ? "text-slate-500 line-through" : "text-pink-600 text-lg"}>
+                        {formatVND(totalBeforeDiscount)}
+                      </span>
                     </div>
                     {appliedDiscount > 0 && (
+                      <div className="flex justify-between font-bold text-base text-pink-600">
+                        <span>Final Total</span>
+                        <span className="text-lg">{formatVND(total)}</span>
+                      </div>
+                    )}
+                    {appliedDiscount > 0 && (
                       <p className="text-xs text-emerald-600 text-right mt-1">
-                        You save {formatVND(discountAmount)} with this voucher 🎉
+                        You save {formatVND(discountAmount)} with this voucher.
                       </p>
                     )}
                   </div>
