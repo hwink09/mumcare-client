@@ -1,8 +1,10 @@
 import AdminOrderManagementPage from "@/pages/admin/AdminOrderManagementPage";
 import {
   BrowserRouter as Router,
+  Navigate,
   Routes,
   Route,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth, useCart } from "@/hooks/useAuth";
@@ -36,10 +38,14 @@ import { ProductDetailPage } from "@/pages/products/ProductDetailPage";
 import { ProductListPage } from "@/pages/products/ProductListPage";
 import { Header } from "@/components/shared/header";
 import { resolvePageRoute } from "@/lib/pageRoutes";
+import type { Product } from "@/types/product";
 
 function App() {
   const auth = useAuth();
-  const cart = useCart();
+  const cart = useCart({
+    isLoggedIn: auth.isLoggedIn,
+    ownerKey: auth.user?._id || auth.user?.id || auth.user?.email || null,
+  });
 
   if (auth.loading) {
     return (
@@ -62,9 +68,39 @@ interface AppRoutesProps {
 }
 
 function AppRoutes({ auth, cart }: AppRoutesProps) {
+  const location = useLocation();
   const navigate = useNavigate();
+  const redirectTo = (location.state as { redirectTo?: string } | null)?.redirectTo || null;
+
+  const goToLogin = (targetPath: string) => {
+    navigate("/login", { state: { redirectTo: targetPath } });
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (!auth.isLoggedIn) {
+      goToLogin(`${location.pathname}${location.search}`);
+      return false;
+    }
+
+    return cart.addToCart(product);
+  };
+
+  const handleCartAccess = () => {
+    if (!auth.isLoggedIn) {
+      goToLogin("/cart");
+      return false;
+    }
+
+    navigate("/cart");
+    return true;
+  };
 
   const navigateByPage = (page: string) => {
+    if (page === "cart" && !auth.isLoggedIn) {
+      goToLogin("/cart");
+      return;
+    }
+
     navigate(resolvePageRoute(page));
   };
 
@@ -75,8 +111,9 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         path="/login"
         element={
           <LoginPage
-            onSwitchToRegister={() => navigate("/register")}
+            onSwitchToRegister={() => navigate("/register", { state: location.state })}
             onLoginSuccess={auth.onLoggedIn}
+            redirectPath={redirectTo}
           />
         }
       />
@@ -88,7 +125,7 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
           <div className="flex flex-col min-h-screen">
             <Header
               cartItemCount={cart.cartItemCount}
-              onCartClick={() => navigate("/cart")}
+              onCartClick={handleCartAccess}
               onLoginClick={() => navigate("/login")}
               onRegisterClick={() => navigate("/register")}
               isLoggedIn={auth.isLoggedIn}
@@ -192,42 +229,116 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         element={
           <RegisterPage
             onClose={() => navigate(-1)}
-            onSwitchToLogin={() => navigate("/login")}
+            onSwitchToLogin={() => navigate("/login", { state: location.state })}
           />
         }
       />
 
       <Route
         path="/products"
-        element={<ProductListPage isLoggedIn={auth.isLoggedIn} user={auth.user || undefined} onLogoutClick={auth.onLogout} />}
+        element={
+          <ProductListPage
+            isLoggedIn={auth.isLoggedIn}
+            user={auth.user || undefined}
+            onLogoutClick={auth.onLogout}
+            cartItemCount={cart.cartItemCount}
+            onAddToCart={handleAddToCart}
+            onCartClick={handleCartAccess}
+          />
+        }
       />
-      <Route path="/products/:id" element={<ProductDetailPage onAddToCart={cart.addToCart} />} />
+      <Route
+        path="/products/:id"
+        element={<ProductDetailPage onAddToCart={handleAddToCart} onGoToCart={handleCartAccess} />}
+      />
 
       <Route
         path="/blogs"
         element={
           <BlogListPage
             onNavigate={navigateByPage}
-            onCartClick={() => navigate("/cart")}
+            onCartClick={handleCartAccess}
             onLoginClick={() => navigate("/login")}
             onRegisterClick={() => navigate("/register")}
             isLoggedIn={auth.isLoggedIn}
             user={auth.user || undefined}
             onLogout={auth.onLogout}
-            cartItemCount={cart.items.length}
+            cartItemCount={cart.cartItemCount}
           />
         }
       />
-      <Route path="/blogs/:id" element={<BlogDetailPage />} />
+      <Route
+        path="/blogs/:id"
+        element={
+          <BlogDetailPage
+            onNavigate={navigateByPage}
+            onCartClick={handleCartAccess}
+            onLoginClick={() => navigate("/login", { state: { redirectTo: location.pathname } })}
+            onRegisterClick={() => navigate("/register", { state: { redirectTo: location.pathname } })}
+            isLoggedIn={auth.isLoggedIn}
+            user={auth.user || undefined}
+            onLogout={auth.onLogout}
+            cartItemCount={cart.cartItemCount}
+          />
+        }
+      />
 
       <Route
         path="/cart"
-        element={<CartPage isLoggedIn={auth.isLoggedIn} items={cart.items} onUpdateQuantity={cart.updateQuantity} onRemoveItem={cart.removeItem} clearCart={cart.clearCart} />}
+        element={
+          auth.isLoggedIn ? (
+            <CartPage
+              isLoggedIn={auth.isLoggedIn}
+              items={cart.items}
+              onUpdateQuantity={cart.updateQuantity}
+              onRemoveItem={cart.removeItem}
+              clearCart={cart.clearCart}
+            />
+          ) : (
+            <Navigate to="/login" replace state={{ redirectTo: "/cart" }} />
+          )
+        }
       />
-      <Route path="/checkout" element={<CheckoutPage isLoggedIn={auth.isLoggedIn} cartItems={cart.items} clearCart={cart.clearCart} />} />
-      <Route path="/orders" element={<OrdersPage />} />
-      <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-      <Route path="/reviews" element={<MyReviewsPage user={auth.user || undefined} isLoggedIn={auth.isLoggedIn} />} />
+      <Route
+        path="/checkout"
+        element={
+          auth.isLoggedIn ? (
+            <CheckoutPage isLoggedIn={auth.isLoggedIn} cartItems={cart.items} clearCart={cart.clearCart} />
+          ) : (
+            <Navigate to="/login" replace state={{ redirectTo: "/checkout" }} />
+          )
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          auth.isLoggedIn ? (
+            <OrdersPage isLoggedIn={auth.isLoggedIn} />
+          ) : (
+            <Navigate to="/login" replace state={{ redirectTo: "/orders" }} />
+          )
+        }
+      />
+      <Route
+        path="/orders/:orderId"
+        element={
+          auth.isLoggedIn ? (
+            <OrderDetailPage />
+          ) : (
+            <Navigate to="/login" replace state={{ redirectTo: location.pathname }} />
+          )
+        }
+      />
+      <Route
+        path="/reviews"
+        element={
+          auth.isLoggedIn ? (
+            <MyReviewsPage user={auth.user || undefined} isLoggedIn={auth.isLoggedIn} />
+          ) : (
+            <Navigate to="/login" replace state={{ redirectTo: "/reviews" }} />
+          )
+        }
+      />
       <Route path="/loyalty" element={<LoyaltyPage />} />
       <Route path="/coupons" element={<CouponsPage user={auth.user} />} />
       <Route path="/profile" element={<ProfilePage initialUser={auth.user || undefined} />} />
@@ -237,13 +348,13 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         element={
           <ContactPage
             onNavigate={navigateByPage}
-            onCartClick={() => navigate("/cart")}
+            onCartClick={handleCartAccess}
             onLoginClick={() => navigate("/login")}
             onRegisterClick={() => navigate("/register")}
             isLoggedIn={auth.isLoggedIn}
             user={auth.user || undefined}
             onLogout={auth.onLogout}
-            cartItemCount={cart.items.length}
+            cartItemCount={cart.cartItemCount}
           />
         }
       />
@@ -252,13 +363,13 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         element={
           <AboutPage
             onNavigate={navigateByPage}
-            onCartClick={() => navigate("/cart")}
+            onCartClick={handleCartAccess}
             onLoginClick={() => navigate("/login")}
             onRegisterClick={() => navigate("/register")}
             isLoggedIn={auth.isLoggedIn}
             user={auth.user || undefined}
             onLogout={auth.onLogout}
-            cartItemCount={cart.items.length}
+            cartItemCount={cart.cartItemCount}
           />
         }
       />

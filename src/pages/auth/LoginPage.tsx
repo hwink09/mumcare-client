@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Gift,
+  Lock,
+  Mail,
+  Package,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AuthField } from "@/components/auth/AuthField";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { loginUser } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
 
@@ -23,43 +33,48 @@ export function LoginPage({
   onLoginSuccess,
   initialEmail = "",
   initialPassword = "",
-  title = "Welcome to MumCare Store",
-  subtitle,
+  title = "Welcome back to MumCare",
+  subtitle = "Sign in to track orders, keep your cart in sync, and continue shopping with your member benefits.",
   showRegister = true,
+  redirectPath,
 }: LoginPageProps) {
   const navigate = useNavigate();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(initialPassword);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleOpenRegister = () => {
+    if (onSwitchToRegister) {
+      onSwitchToRegister();
+      return;
+    }
+
+    navigate("/register");
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
       const result = await loginUser({ email, password });
-      const loggedInUser = (result as any)?.data || (result as any)?.user || result;
-      const role = (loggedInUser as any)?.role;
+      const loggedInUser = (result as { data?: CurrentUser; user?: CurrentUser })?.data
+        || (result as { user?: CurrentUser })?.user
+        || (result as CurrentUser);
+      const role = (loggedInUser as { role?: string })?.role;
 
-      // Cập nhật user state nếu có
-      if (onLoginSuccess) {
-        onLoginSuccess(loggedInUser as any);
-      }
-      if (onClose) {
-        onClose();
-      }
+      onLoginSuccess?.(loggedInUser);
+      onClose?.();
 
-      // Điều hướng dựa trên role
       if (role === "staff") {
         navigate("/staff");
       } else if (role === "admin") {
         navigate("/admin");
       } else {
-        navigate("/"); // HomePage cho client hoặc role khác
+        navigate(redirectPath || "/");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -68,135 +83,124 @@ export function LoginPage({
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <button 
-        onClick={() => navigate("/")}
-        className="absolute top-6 left-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 bg-white/50 hover:bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm transition font-medium shadow-sm"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Home
-      </button>
-      
-      <div className="bg-white rounded-lg max-w-md w-full p-8 relative shadow-lg">
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">{title}</h2>
-          {subtitle ? <p className="text-sm text-muted-foreground mb-4">{subtitle}</p> : null}
+    <AuthShell
+      backLabel="Back to Home"
+      onBack={() => navigate("/")}
+      eyebrow="Sign In"
+      title={title}
+      description={subtitle}
+      panelTitle="Access your MumCare account with confidence."
+      panelDescription="Log in to view orders, manage rewards, and keep everyday shopping smoother for your family."
+      stats={[
+        { label: "Order tracking", value: "Instant" },
+        { label: "Reward access", value: "Members" },
+      ]}
+      highlights={[
+        {
+          icon: Package,
+          title: "Keep orders close",
+          description: "See your recent purchases, delivery status, and past order details in one place.",
+        },
+        {
+          icon: Gift,
+          title: "Use your benefits",
+          description: "Apply rewards and vouchers faster whenever you are ready to check out again.",
+        },
+        {
+          icon: ShieldCheck,
+          title: "Secure member access",
+          description: "Your account stays focused on safe login, order tracking, and reward access without extra clutter.",
+        },
+      ]}
+    >
+      <div className="mb-6 inline-flex rounded-full bg-slate-100 p-1">
+        <button
+          type="button"
+          className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-950 shadow-sm"
+        >
+          Login
+        </button>
+        {showRegister ? (
+          <button
+            type="button"
+            onClick={handleOpenRegister}
+            className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 transition hover:text-slate-900"
+          >
+            Register
+          </button>
+        ) : null}
+      </div>
 
-          {/* Tabs */}
-          <div className="flex gap-4">
-            <button className="px-6 py-2 bg-white text-black font-medium rounded-full border-2 border-gray-300">
-              Login
-            </button>
-            {/* Chỉ cho phép đăng ký nếu không phải staff/admin */}
-            {showRegister && (!email || (!email.endsWith("@gmail.com") && !email.endsWith("@admin.com"))) && (
-              <button
-                onClick={onSwitchToRegister}
-                className="px-6 py-2 bg-gray-200 text-gray-600 font-medium rounded-full hover:bg-gray-300 transition"
-              >
-                Register
-              </button>
-            )}
-          </div>
-        </div>
+      <form onSubmit={handleLogin} className="space-y-5">
+        <AuthField
+          label="Email"
+          icon={Mail}
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="your@email.com"
+          autoComplete="email"
+          required
+        />
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Remember me & Forgot password */}
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
-              />
-              <span className="text-sm text-gray-700">Remember me</span>
-            </label>
+        <AuthField
+          label="Password"
+          icon={Lock}
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          required
+          rightSlot={
             <button
               type="button"
-              onClick={() => navigate("/forgot-password")}
-              className="text-sm text-gray-600 hover:text-gray-900"
+              onClick={() => setShowPassword((value) => !value)}
+              className="text-slate-400 transition hover:text-slate-600"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              Forgot password?
+              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
             </button>
-          </div>
+          }
+        />
 
-          {/* Error Message */}
-          {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Login Button */}
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+        <div className="flex justify-end text-sm text-slate-600">
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="font-semibold text-slate-700 transition hover:text-pink-600"
           >
-            {loading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">OR CONTINUE WITH</span>
-          </div>
-        </div>
-
-        {/* Social Login */}
-        <div className="grid grid-cols-1 gap-4">
-          <button className="py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <text x="0" y="20" fontSize="24" fill="currentColor">G</text>
-            </svg>
-            Google
+            Forgot password?
           </button>
         </div>
-      </div>
-    </div>
+
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="h-12 w-full rounded-full bg-slate-950 text-white hover:bg-slate-900"
+        >
+          {loading ? "Logging in..." : "Login to MumCare"}
+        </Button>
+      </form>
+
+      {showRegister ? (
+        <div className="mt-6 rounded-[24px] border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+          New to MumCare?
+          <button
+            type="button"
+            onClick={handleOpenRegister}
+            className="ml-2 font-semibold text-slate-900 transition hover:text-pink-600"
+          >
+            Create your account
+          </button>
+        </div>
+      ) : null}
+    </AuthShell>
   );
 }
