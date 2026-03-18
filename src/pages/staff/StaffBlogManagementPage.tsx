@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "../../components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { getBlogs, createBlog, updateBlog, deleteBlog } from "@/services/blogService";
 import { getBlogCategories } from "@/services/categoryService";
@@ -45,6 +45,8 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+  const [blogPendingDelete, setBlogPendingDelete] = useState<Blog | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -53,6 +55,7 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
   const [image, setImage] = useState<File | null>(null);
 
   const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
+  const isAdmin = useMemo(() => user?.role === "admin", [user]);
 
   useEffect(() => {
     if (!user) {
@@ -129,14 +132,18 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
     }
   };
 
-  const handleDelete = async (blogId: string) => {
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+  const handleDelete = async () => {
+    if (!blogPendingDelete) return;
 
+    setDeleteSubmitting(true);
     try {
-      await deleteBlog(blogId);
+      await deleteBlog(blogPendingDelete._id);
       await loadData();
+      setBlogPendingDelete(null);
     } catch (err: any) {
       setError(err?.message || "Failed to delete blog");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -159,6 +166,15 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
     setShowCreateDialog(false);
     setEditingBlog(null);
     resetForm();
+  };
+
+  const openDeleteDialog = (blog: Blog) => {
+    setBlogPendingDelete(blog);
+  };
+
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setBlogPendingDelete(null);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,7 +299,7 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
                     </div>
                   </div>
                 </div>
-                { (user?.role === "admin" || (blog.author && Array.isArray(blog.author) && blog.author.some((a: any) => a.userId === user?._id))) && (
+                {isStaff && (
                   <div className="flex gap-2 ml-4 shrink-0 mt-2">
                     <Button
                       size="sm"
@@ -292,13 +308,15 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
                     >
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(blog._id)}
-                    >
-                      Delete
-                    </Button>
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => openDeleteDialog(blog)}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -317,14 +335,14 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
           <div>
             <div className="inline-flex items-center gap-3 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 shadow-sm">
-              Admin Control Center
+              Staff Workspace
             </div>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight">Blog Management</h1>
             <p className="mt-3 text-base text-muted-foreground max-w-xl">
               Create, edit and manage blog posts for your store.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => navigate("/admin")}>
+              <Button size="sm" variant="outline" onClick={() => navigate("/staff")}>
                 Back to Dashboard
               </Button>
             </div>
@@ -332,7 +350,7 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
 
           <Card className="border border-white/40 bg-white/70 backdrop-blur-sm shadow-lg shadow-indigo-200/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Admin Profile</CardTitle>
+              <CardTitle className="text-base">Staff Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
@@ -345,17 +363,17 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
                     {user?.firstName || "Admin"} {user?.lastName || ""}
                   </div>
                 </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium text-right">{user?.email || "Unknown"}</span>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Role</span>
-                  <Badge variant="secondary">Administrator</Badge>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-right">{user?.email || "Unknown"}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">Role</span>
+                    <Badge variant="secondary" className="capitalize">{user?.role || "staff"}</Badge>
+                  </div>
                 </div>
-              </div>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -371,6 +389,29 @@ export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlo
         </div>
 
         {content}
+
+        <Dialog open={Boolean(blogPendingDelete)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Blog</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Delete <span className="font-medium text-slate-900">{blogPendingDelete?.title}</span> permanently?
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDelete} disabled={deleteSubmitting}>
+                  {deleteSubmitting ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

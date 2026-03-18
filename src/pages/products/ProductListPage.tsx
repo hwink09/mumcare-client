@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
@@ -77,6 +77,20 @@ export function ProductListPage({
 
   const handleNavigate = (pageKey: string) => {
     navigate(resolvePageRoute(pageKey));
+  };
+
+  const updateCategoryRailState = (rail: HTMLDivElement | null) => {
+    if (!rail) {
+      setHasCategoryOverflow(false);
+      setCanSlideLeft(false);
+      setCanSlideRight(false);
+      return;
+    }
+
+    const hasOverflow = rail.scrollWidth > rail.clientWidth + 2;
+    setHasCategoryOverflow(hasOverflow);
+    setCanSlideLeft(hasOverflow && rail.scrollLeft > 2);
+    setCanSlideRight(hasOverflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2);
   };
 
   const setParam = (key: string, value: string) => {
@@ -211,34 +225,24 @@ export function ProductListPage({
     };
   }, [pagination.page, pagination.limit, categoryId, search]);
 
-  const syncCategoryRailArrows = () => {
-    const rail = categoryRailRef.current;
-    if (!rail) {
-      setHasCategoryOverflow(false);
-      setCanSlideLeft(false);
-      setCanSlideRight(false);
-      return;
-    }
-
-    const hasOverflow = rail.scrollWidth > rail.clientWidth + 2;
-    setHasCategoryOverflow(hasOverflow);
-    setCanSlideLeft(hasOverflow && rail.scrollLeft > 2);
-    setCanSlideRight(hasOverflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2);
+  const handleCategoryRailScroll = (event: UIEvent<HTMLDivElement>) => {
+    updateCategoryRailState(event.currentTarget);
   };
 
   useEffect(() => {
-    syncCategoryRailArrows();
     const rail = categoryRailRef.current;
-    if (!rail) return;
+    updateCategoryRailState(rail);
 
-    const handleScroll = () => syncCategoryRailArrows();
+    if (!rail || typeof ResizeObserver === "undefined") return;
 
-    rail.addEventListener("scroll", handleScroll);
-    window.addEventListener("resize", handleScroll);
+    const resizeObserver = new ResizeObserver(() => {
+      updateCategoryRailState(rail);
+    });
+
+    resizeObserver.observe(rail);
 
     return () => {
-      rail.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
+      resizeObserver.disconnect();
     };
   }, [categories]);
 
@@ -317,7 +321,11 @@ export function ProductListPage({
                 </Button>
               ) : null}
 
-              <div ref={categoryRailRef} className="flex-1 overflow-x-auto scroll-smooth">
+              <div
+                ref={categoryRailRef}
+                onScroll={handleCategoryRailScroll}
+                className="flex-1 overflow-x-auto scroll-smooth"
+              >
                 <div className="inline-flex min-w-max gap-2 pr-1">
                   <Badge
                     variant={categoryId ? "secondary" : "default"}

@@ -156,22 +156,15 @@ export function ContactPage({
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button
-                  className="h-11 rounded-full bg-slate-950 px-5 text-white hover:bg-slate-900"
-                  onClick={() => {
-                    window.location.href = "mailto:mumcare@gmail.com";
-                  }}
-                >
-                  Email support
+                <Button asChild className="h-11 rounded-full bg-slate-950 px-5 text-white hover:bg-slate-900">
+                  <a href="mailto:mumcare@gmail.com">Email support</a>
                 </Button>
                 <Button
+                  asChild
                   variant="outline"
                   className="h-11 rounded-full border-slate-200 bg-white px-5 text-slate-800 hover:bg-slate-50"
-                  onClick={() => {
-                    window.location.href = "tel:+862317046";
-                  }}
                 >
-                  Call MumCare
+                  <a href="tel:+862317046">Call MumCare</a>
                 </Button>
               </div>
             </div>

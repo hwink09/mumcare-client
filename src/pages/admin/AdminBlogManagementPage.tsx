@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
@@ -45,6 +46,8 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+  const [blogPendingDelete, setBlogPendingDelete] = useState<Blog | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -129,14 +132,27 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
     }
   };
 
-  const handleDelete = async (blogId: string) => {
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+  const openDeleteDialog = (blog: Blog) => {
+    setBlogPendingDelete(blog);
+  };
 
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setBlogPendingDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!blogPendingDelete) return;
+
+    setDeleteSubmitting(true);
     try {
-      await deleteBlog(blogId);
+      await deleteBlog(blogPendingDelete._id);
       await loadData();
+      setBlogPendingDelete(null);
     } catch (err: any) {
       setError(err?.message || "Failed to delete blog");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -294,7 +310,7 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDelete(blog._id)}
+                    onClick={() => openDeleteDialog(blog)}
                   >
                     Delete
                   </Button>
@@ -304,6 +320,20 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
           </div>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={Boolean(blogPendingDelete)}
+        title="Delete Blog"
+        description={
+          blogPendingDelete
+            ? `Are you sure you want to delete "${blogPendingDelete.title}"?`
+            : "Are you sure you want to delete this blog?"
+        }
+        confirmText={deleteSubmitting ? "Deleting..." : "Delete"}
+        confirmDisabled={deleteSubmitting}
+        cancelDisabled={deleteSubmitting}
+        onConfirm={handleDelete}
+        onCancel={closeDeleteDialog}
+      />
     </Card>
   );
 

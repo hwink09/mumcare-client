@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
-import { Copy, Plus, Edit } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Edit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { CurrentUser } from "@/hooks/useAuth";
 import couponService from "@/services/couponService";
 
@@ -20,6 +23,8 @@ interface StaffVoucherManagementPageProps {
   isEmbedded?: boolean;
 }
 
+const DEFAULT_FORM_DATA = { name: "", discount: 10, expiry: 7, pointCost: 0 };
+
 export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherManagementPageProps) {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,9 +32,11 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
 
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "", discount: 0, expiry: 30, pointCost: 0 }); // Default expiry 30 days
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const isFormDialogOpen = useMemo(() => isCreating || Boolean(isEditing), [isCreating, isEditing]);
 
   const loadVouchers = async () => {
     try {
@@ -48,37 +55,46 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
     loadVouchers();
   }, []);
 
-  const handleEditClick = (v: Voucher) => {
-    setIsEditing(v._id);
-    setIsCreating(false);
-    
-    // expiry is usually a date string from server, calculate approx days from now
-    const expires = new Date(v.expiry);
-    const now = new Date();
-    const diffTime = Math.abs(expires.getTime() - now.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const resetForm = () => {
+    setFormData(DEFAULT_FORM_DATA);
+    setFormError(null);
+  };
 
-    setFormData({ name: v.name, discount: v.discount, expiry: diffDays, pointCost: v.pointCost || 0 });
+  const handleEditClick = (voucher: Voucher) => {
+    const expires = new Date(voucher.expiry);
+    const now = new Date();
+    const diffMs = expires.getTime() - now.getTime();
+    const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+    setIsEditing(voucher._id);
+    setIsCreating(false);
+    setFormData({
+      name: voucher.name,
+      discount: voucher.discount,
+      expiry: diffDays,
+      pointCost: voucher.pointCost || 0,
+    });
     setFormError(null);
   };
 
   const handleCreateClick = () => {
     setIsCreating(true);
     setIsEditing(null);
-    setFormData({ name: "", discount: 10, expiry: 7, pointCost: 0 });
-    setFormError(null);
+    resetForm();
   };
 
-  const handleCancelForm = () => {
+  const closeFormDialog = () => {
+    if (submitting) return;
+
     setIsCreating(false);
     setIsEditing(null);
-    setFormError(null);
+    resetForm();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setFormError(null);
-    
+
     if (!formData.name.trim()) {
       setFormError("Voucher code cannot be empty.");
       return;
@@ -94,44 +110,44 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
 
     setSubmitting(true);
     try {
+      const payload = {
+        name: formData.name.trim().toUpperCase(),
+        discount: Number(formData.discount),
+        expiry: Number(formData.expiry),
+        pointCost: Number(formData.pointCost) || 0,
+      };
+
       if (isEditing) {
-        await couponService.update(isEditing, {
-            name: formData.name.trim().toUpperCase(),
-            discount: Number(formData.discount),
-            expiry: Number(formData.expiry),
-            pointCost: Number(formData.pointCost) || 0,
-        });
+        await couponService.update(isEditing, payload);
       } else {
-        await couponService.create({
-            name: formData.name.trim().toUpperCase(),
-            discount: Number(formData.discount),
-            expiry: Number(formData.expiry),
-            pointCost: Number(formData.pointCost) || 0,
-        });
+        await couponService.create(payload);
       }
 
       await loadVouchers();
       setIsCreating(false);
       setIsEditing(null);
+      resetForm();
     } catch (err: any) {
-      setFormError(err.message || "Operation failed.");
+      setFormError(err?.message || "Operation failed.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const wrapContent = (content: React.ReactNode) => {
+    const headerAction = (
+      <Button onClick={handleCreateClick} size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
+        <Plus className="mr-2 h-4 w-4" />
+        Add Voucher
+      </Button>
+    );
+
     if (isEmbedded) {
       return (
-        <Card className="border-0 shadow-lg shadow-slate-100 mt-4">
+        <Card className="mt-4 border-0 shadow-lg shadow-slate-100">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Voucher Management</CardTitle>
-            {!isCreating && !isEditing && (
-              <Button onClick={handleCreateClick} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Voucher
-              </Button>
-            )}
+            {headerAction}
           </CardHeader>
           <CardContent>{content}</CardContent>
         </Card>
@@ -141,14 +157,9 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <div className="container mx-auto px-4 py-10">
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Vouchers</h1>
-            {!isCreating && !isEditing && (
-              <Button onClick={handleCreateClick} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Voucher
-              </Button>
-            )}
+            {headerAction}
           </div>
           <Card className="border-0 shadow-lg shadow-slate-100">
             <CardContent className="pt-6">{content}</CardContent>
@@ -161,111 +172,63 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
   let content = null;
 
   if (loading) {
-    content = <div className="text-center py-10 text-muted-foreground">Loading vouchers...</div>;
+    content = <div className="py-10 text-center text-muted-foreground">Loading vouchers...</div>;
   } else if (error) {
-    content = <div className="text-center py-10 text-rose-500">{error}</div>;
-  } else if (isCreating || isEditing) {
-    content = (
-      <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
-        {formError && <div className="bg-rose-50 text-rose-600 px-3 py-2 rounded text-sm">{formError}</div>}
-        <div>
-          <label className="block text-sm font-medium mb-1">Voucher Code</label>
-          <input
-            className="w-full border rounded px-3 py-2 uppercase"
-            placeholder="e.g. SUMMER20"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-            autoFocus
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Discount (%)</label>
-          <input
-            type="number"
-            className="w-full border rounded px-3 py-2"
-            min="1"
-            max="99"
-            value={formData.discount}
-            onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Valid for (days from now)</label>
-          <input
-            type="number"
-            className="w-full border rounded px-3 py-2"
-            min="1"
-            value={formData.expiry}
-            onChange={(e) => setFormData({ ...formData, expiry: Number(e.target.value) })}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Exchange Points Cost (0 for free)</label>
-          <input
-            type="number"
-            className="w-full border rounded px-3 py-2"
-            min="0"
-            value={formData.pointCost}
-            onChange={(e) => setFormData({ ...formData, pointCost: Number(e.target.value) })}
-          />
-        </div>
-        <div className="flex gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={handleCancelForm} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            {submitting ? "Saving..." : isEditing ? "Save Changes" : "Create Voucher"}
-          </Button>
-        </div>
-      </form>
-    );
+    content = <div className="py-10 text-center text-rose-500">{error}</div>;
   } else if (vouchers.length === 0) {
-    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click Add Voucher to create one.</div>;
+    content = <div className="py-10 text-center text-muted-foreground">No vouchers found. Click Add Voucher to create one.</div>;
   } else {
     content = (
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left align-middle border-collapse">
+        <table className="w-full border-collapse text-left align-middle text-sm">
           <thead>
-            <tr className="border-b bg-slate-50 text-slate-500 font-medium">
-              <th className="py-3 px-4">Code</th>
-              <th className="py-3 px-4">Discount</th>
-              <th className="py-3 px-4">Expiry Date</th>
-              <th className="py-3 px-4">Point Cost</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+            <tr className="border-b bg-slate-50 font-medium text-slate-500">
+              <th className="px-4 py-3">Code</th>
+              <th className="px-4 py-3">Discount</th>
+              <th className="px-4 py-3">Expiry Date</th>
+              <th className="px-4 py-3">Point Cost</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y text-slate-700">
-            {vouchers.map((v) => {
-              const isExpired = new Date(v.expiry) < new Date();
+            {vouchers.map((voucher) => {
+              const isExpired = new Date(voucher.expiry) < new Date();
               return (
-                <tr key={v._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-semibold text-slate-900 group relative truncate max-w-[150px]">
-                    {v.name}
+                <tr key={voucher._id} className="transition-colors hover:bg-slate-50">
+                  <td className="group relative max-w-[150px] truncate px-4 py-3 font-semibold text-slate-900">
+                    {voucher.name}
                     <button
-                        className="ml-2 text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => navigator.clipboard.writeText(v.name)}
-                        title="Copy Code"
+                      type="button"
+                      className="ml-2 text-slate-400 opacity-0 transition-opacity hover:text-indigo-600 group-hover:opacity-100"
+                      onClick={() => navigator.clipboard.writeText(voucher.name)}
+                      title="Copy Code"
                     >
-                        <Copy className="h-3 w-3 inline" />
+                      <Copy className="inline h-3 w-3" />
                     </button>
                   </td>
-                  <td className="py-3 px-4 text-emerald-600 font-medium">{v.discount}% Off</td>
-                  <td className="py-3 px-4">
-                    {new Date(v.expiry).toLocaleDateString()}
-                    {isExpired && <span className="ml-2 text-xs text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full inline-block">Expired</span>}
+                  <td className="px-4 py-3 font-medium text-emerald-600">{voucher.discount}% Off</td>
+                  <td className="px-4 py-3">
+                    {new Date(voucher.expiry).toLocaleDateString()}
+                    {isExpired && (
+                      <span className="ml-2 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-xs text-rose-500">
+                        Expired
+                      </span>
+                    )}
                   </td>
-                  <td className="py-3 px-4 text-amber-600 font-medium">
-                    {v.pointCost ? `${v.pointCost} pts` : "Free"}
+                  <td className="px-4 py-3 font-medium text-amber-600">
+                    {voucher.pointCost ? `${voucher.pointCost} pts` : "Free"}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(v)} className="h-8 w-8 p-0 text-slate-500 hover:text-indigo-600">
-                            <span className="sr-only">Edit</span>
-                            <Edit className="h-4 w-4" />
-                        </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditClick(voucher)}
+                        className="h-8 w-8 p-0 text-slate-500 hover:text-indigo-600"
+                      >
+                        <span className="sr-only">Edit</span>
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -277,7 +240,86 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
     );
   }
 
-  return wrapContent(content);
+  return wrapContent(
+    <>
+      {content}
+
+      <Dialog open={isFormDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{isEditing ? "Edit Voucher" : "Create Voucher"}</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {formError && (
+              <div className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                {formError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="voucher-name">Voucher Code</Label>
+              <Input
+                id="voucher-name"
+                className="uppercase"
+                placeholder="e.g. SUMMER20"
+                value={formData.name}
+                onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+                disabled={submitting}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="voucher-discount">Discount (%)</Label>
+              <Input
+                id="voucher-discount"
+                type="number"
+                min="1"
+                max="99"
+                value={formData.discount}
+                onChange={(event) => setFormData((prev) => ({ ...prev, discount: Number(event.target.value) }))}
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="voucher-expiry">Valid For (days from now)</Label>
+              <Input
+                id="voucher-expiry"
+                type="number"
+                min="1"
+                value={formData.expiry}
+                onChange={(event) => setFormData((prev) => ({ ...prev, expiry: Number(event.target.value) }))}
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="voucher-points">Exchange Points Cost</Label>
+              <Input
+                id="voucher-points"
+                type="number"
+                min="0"
+                value={formData.pointCost}
+                onChange={(event) => setFormData((prev) => ({ ...prev, pointCost: Number(event.target.value) }))}
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeFormDialog} disabled={submitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting} className="bg-indigo-600 text-white hover:bg-indigo-700">
+                {submitting ? "Saving..." : isEditing ? "Save Changes" : "Create Voucher"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>,
+  );
 }
 
 export default StaffVoucherManagementPage;

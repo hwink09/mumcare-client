@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityModal } from "@/components/admin/ActivityModal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
 
 import {
@@ -25,6 +26,7 @@ import { formatVND } from "@/lib/currency";
 type AdminDashboardProps = {
   user?: CurrentUser | null;
   onLogout: () => void;
+  activeTab?: AdminTab;
 };
 
 type AdminTab = "users" | "reports" | "orders" | "products" | "categories" | "blogs" | "vouchers";
@@ -54,15 +56,30 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   canceled: "Canceled",
 };
 
-export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
+const ADMIN_TAB_ROUTES: Record<AdminTab, string> = {
+  users: "/admin/users",
+  reports: "/admin",
+  orders: "/admin/orders",
+  products: "/admin/products",
+  categories: "/admin/categories",
+  blogs: "/admin/blogs",
+  vouchers: "/admin/vouchers",
+};
+
+export function AdminDashboardPage({
+  user,
+  onLogout,
+  activeTab = "reports",
+}: AdminDashboardProps) {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [showActivity, setShowActivity] = useState(false);
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [orderPendingDelete, setOrderPendingDelete] = useState<OrderItem | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const [stats, setStats] = useState<Record<AdminTab, StatItem[]>>({
     users: [
@@ -188,15 +205,28 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!window.confirm("Delete this order?")) return;
+  const openDeleteDialog = (order: OrderItem) => {
+    setOrderPendingDelete(order);
+  };
 
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setOrderPendingDelete(null);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderPendingDelete) return;
+
+    setDeleteSubmitting(true);
     try {
-      await deleteOrder(orderId);
+      await deleteOrder(orderPendingDelete._id);
       loadOrders();
       loadStats();
+      setOrderPendingDelete(null);
     } catch {
       setOrdersError("Failed to delete order.");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -204,6 +234,11 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
     activeTab === tab
       ? "bg-indigo-600 text-white hover:bg-indigo-700"
       : "bg-white text-slate-700 border hover:bg-slate-50";
+
+  const handleTabChange = (tab: AdminTab) => {
+    if (activeTab === tab) return;
+    navigate(ADMIN_TAB_ROUTES[tab]);
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
@@ -233,13 +268,13 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
 
         {/* TABS */}
         <div className="flex gap-3 mb-6 flex-wrap mt-8">
-          <Button className={tabClass("users")} onClick={() => setActiveTab("users")}>Users</Button>
-          <Button className={tabClass("reports")} onClick={() => setActiveTab("reports")}>Reports</Button>
-          <Button className={tabClass("orders")} onClick={() => setActiveTab("orders")}>Orders</Button>
-          <Button className={tabClass("products")} onClick={() => setActiveTab("products")}>Products</Button>
-          <Button className={tabClass("categories")} onClick={() => setActiveTab("categories")}>Categories</Button>
-          <Button className={tabClass("blogs")} onClick={() => setActiveTab("blogs")}>Blogs</Button>
-          <Button className={tabClass("vouchers")} onClick={() => setActiveTab("vouchers")}>Vouchers</Button>
+          <Button className={tabClass("users")} onClick={() => handleTabChange("users")}>Users</Button>
+          <Button className={tabClass("reports")} onClick={() => handleTabChange("reports")}>Reports</Button>
+          <Button className={tabClass("orders")} onClick={() => handleTabChange("orders")}>Orders</Button>
+          <Button className={tabClass("products")} onClick={() => handleTabChange("products")}>Products</Button>
+          <Button className={tabClass("categories")} onClick={() => handleTabChange("categories")}>Categories</Button>
+          <Button className={tabClass("blogs")} onClick={() => handleTabChange("blogs")}>Blogs</Button>
+          <Button className={tabClass("vouchers")} onClick={() => handleTabChange("vouchers")}>Vouchers</Button>
         </div>
 
         {/* STATS */}
@@ -313,7 +348,7 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteOrder(order._id)}
+                          onClick={() => openDeleteDialog(order)}
                         >
                           Delete
                         </Button>
@@ -325,6 +360,21 @@ export function AdminDashboardPage({ user, onLogout }: AdminDashboardProps) {
             </CardContent>
           </Card>
         )}
+
+        <ConfirmDialog
+          open={Boolean(orderPendingDelete)}
+          title="Delete Order"
+          description={
+            orderPendingDelete
+              ? `Delete order ${orderPendingDelete.orderCode || orderPendingDelete._id} permanently?`
+              : "Delete this order?"
+          }
+          confirmText={deleteSubmitting ? "Deleting..." : "Delete"}
+          confirmDisabled={deleteSubmitting}
+          cancelDisabled={deleteSubmitting}
+          onConfirm={handleDeleteOrder}
+          onCancel={closeDeleteDialog}
+        />
 
         {/* PRODUCTS */}
         {activeTab === "products" && (

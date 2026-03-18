@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getAllOrders, updateOrderStatus, deleteOrder } from "@/services/orderService";
 
 const ORDER_STATUS_LABEL = {
@@ -32,6 +33,8 @@ export default function AdminOrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderPendingDelete, setOrderPendingDelete] = useState<Order | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const loadOrders = async () => {
@@ -61,13 +64,27 @@ export default function AdminOrderManagementPage() {
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!window.confirm("Delete this order permanently?")) return;
+  const openDeleteDialog = (order: Order) => {
+    setOrderPendingDelete(order);
+  };
+
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setOrderPendingDelete(null);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderPendingDelete) return;
+
+    setDeleteSubmitting(true);
     try {
-      await deleteOrder(orderId);
+      await deleteOrder(orderPendingDelete._id);
       await loadOrders();
+      setOrderPendingDelete(null);
     } catch {
       setError("Failed to delete order. Please try again.");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -149,7 +166,7 @@ export default function AdminOrderManagementPage() {
                         <option key={key} value={key}>{label}</option>
                       ))}
                   </select>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order._id)}>
+                  <Button size="sm" variant="destructive" onClick={() => openDeleteDialog(order)}>
                     Delete
                   </Button>
                 </>
@@ -158,6 +175,20 @@ export default function AdminOrderManagementPage() {
           </div>
         ))}
       </div>
+      <ConfirmDialog
+        open={Boolean(orderPendingDelete)}
+        title="Delete Order"
+        description={
+          orderPendingDelete
+            ? `Delete order ${orderPendingDelete.orderCode || orderPendingDelete._id} permanently?`
+            : "Delete this order permanently?"
+        }
+        confirmText={deleteSubmitting ? "Deleting..." : "Delete"}
+        confirmDisabled={deleteSubmitting}
+        cancelDisabled={deleteSubmitting}
+        onConfirm={handleDeleteOrder}
+        onCancel={closeDeleteDialog}
+      />
       </div>
     </div>
   );

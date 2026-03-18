@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -35,6 +36,8 @@ export function AdminCategoryManagementPage({ user, onLogout, isEmbedded }: Admi
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
   });
@@ -94,14 +97,27 @@ export function AdminCategoryManagementPage({ user, onLogout, isEmbedded }: Admi
     }
   };
 
-  const handleDelete = async (categoryId: string) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) return;
+  const openDeleteDialog = (category: Category) => {
+    setCategoryPendingDelete(category);
+  };
 
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setCategoryPendingDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!categoryPendingDelete) return;
+
+    setDeleteSubmitting(true);
     try {
-      await deleteProductCategory(categoryId);
+      await deleteProductCategory(categoryPendingDelete._id);
       await loadCategories();
+      setCategoryPendingDelete(null);
     } catch (err: any) {
       setError(err?.message || "Failed to delete category");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -195,7 +211,7 @@ export function AdminCategoryManagementPage({ user, onLogout, isEmbedded }: Admi
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(category._id)}
+                      onClick={() => openDeleteDialog(category)}
                     >
                       Delete
                     </Button>
@@ -206,6 +222,21 @@ export function AdminCategoryManagementPage({ user, onLogout, isEmbedded }: Admi
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(categoryPendingDelete)}
+        title="Delete Category"
+        description={
+          categoryPendingDelete
+            ? `Are you sure you want to delete "${categoryPendingDelete.title}"?`
+            : "Are you sure you want to delete this category?"
+        }
+        confirmText={deleteSubmitting ? "Deleting..." : "Delete"}
+        confirmDisabled={deleteSubmitting}
+        cancelDisabled={deleteSubmitting}
+        onConfirm={handleDelete}
+        onCancel={closeDeleteDialog}
+      />
     </>
   );
 

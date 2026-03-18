@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { deleteUser, getUsers, updateUserByAdmin } from "@/services/userService";
 import { ActivityModal } from "@/components/admin/ActivityModal";
@@ -33,6 +34,8 @@ export function AdminUserManagementPage({ user, onLogout, isEmbedded }: AdminUse
   const [filterRole, setFilterRole] = useState<string>("");
   const [filterBlocked, setFilterBlocked] = useState<string>("");
   const [showActivity, setShowActivity] = useState(false);
+  const [userPendingDelete, setUserPendingDelete] = useState<UserRow | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const isAdmin = useMemo(() => user?.role === "admin", [user]);
 
@@ -89,18 +92,33 @@ export function AdminUserManagementPage({ user, onLogout, isEmbedded }: AdminUse
     }
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!window.confirm("Permanently delete this user?")) return;
+  const openDeleteDialog = (userItem: UserRow) => {
+    setUserPendingDelete(userItem);
+  };
+
+  const closeDeleteDialog = () => {
+    if (deleteSubmitting) return;
+    setUserPendingDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!userPendingDelete) return;
+
+    setDeleteSubmitting(true);
     try {
-      await deleteUser(userId);
+      await deleteUser(userPendingDelete._id);
       await loadUsers();
+      setUserPendingDelete(null);
     } catch (err: any) {
       setError(err?.message || "Failed to delete user");
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
   const content = (
-    <Card className="border-0 shadow-lg shadow-slate-100">
+    <>
+      <Card className="border-0 shadow-lg shadow-slate-100">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Users</CardTitle>
       </CardHeader>
@@ -196,7 +214,7 @@ export function AdminUserManagementPage({ user, onLogout, isEmbedded }: AdminUse
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleDelete(u._id)}
+                          onClick={() => openDeleteDialog(u)}
                           disabled={u.role === "admin"}
                         >
                           Delete
@@ -210,7 +228,22 @@ export function AdminUserManagementPage({ user, onLogout, isEmbedded }: AdminUse
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+      <ConfirmDialog
+        open={Boolean(userPendingDelete)}
+        title="Delete User"
+        description={
+          userPendingDelete
+            ? `Permanently delete ${userPendingDelete.email || "this user"}?`
+            : "Permanently delete this user?"
+        }
+        confirmText={deleteSubmitting ? "Deleting..." : "Delete"}
+        confirmDisabled={deleteSubmitting}
+        cancelDisabled={deleteSubmitting}
+        onConfirm={handleDelete}
+        onCancel={closeDeleteDialog}
+      />
+    </>
   );
 
   return (

@@ -12,6 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import couponService from "@/services/couponService";
 import { getMyOrders } from "@/services/orderService";
 import authService from "@/services/userService";
@@ -49,6 +50,7 @@ export function LoyaltyPage() {
   const [points, setPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState<string | null>(null);
+  const [couponPendingExchange, setCouponPendingExchange] = useState<Coupon | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const activeCoupons = useMemo(
@@ -178,23 +180,32 @@ export function LoyaltyPage() {
     };
   }, [navigate]);
 
-  const handleExchange = async (coupon: Coupon) => {
+  const openExchangeDialog = (coupon: Coupon) => {
     if (points < (coupon.pointCost || 0)) {
       alert(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
       return;
     }
+    setCouponPendingExchange(coupon);
+  };
 
-    if (!window.confirm(`Exchange ${coupon.pointCost} points for ${coupon.discount}% OFF voucher?`)) return;
+  const closeExchangeDialog = () => {
+    if (exchangeLoading) return;
+    setCouponPendingExchange(null);
+  };
 
-    setExchangeLoading(coupon._id);
+  const handleExchange = async () => {
+    if (!couponPendingExchange) return;
+
+    setExchangeLoading(couponPendingExchange._id);
 
     try {
-      await authService.redeemCoupon(coupon._id);
+      await authService.redeemCoupon(couponPendingExchange._id);
       alert("Voucher exchanged successfully!");
 
-      setPoints((prev) => prev - (coupon.pointCost || 0));
-      setCoupons((prev) => [...prev, coupon]);
-      setExchangeableCoupons((prev) => prev.filter((item) => item._id !== coupon._id));
+      setPoints((prev) => prev - (couponPendingExchange.pointCost || 0));
+      setCoupons((prev) => [...prev, couponPendingExchange]);
+      setExchangeableCoupons((prev) => prev.filter((item) => item._id !== couponPendingExchange._id));
+      setCouponPendingExchange(null);
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.message || "Exchange failed.");
     } finally {
@@ -366,7 +377,7 @@ export function LoyaltyPage() {
 
                           <Button
                             type="button"
-                            onClick={() => handleExchange(coupon)}
+                            onClick={() => openExchangeDialog(coupon)}
                             disabled={exchangeLoading === coupon._id || insufficientPoints}
                             className="mt-6 h-11 w-full rounded-full bg-slate-950 text-white hover:bg-slate-900"
                           >
@@ -515,6 +526,21 @@ export function LoyaltyPage() {
             </Card>
           </aside>
         </div>
+        <ConfirmDialog
+          open={Boolean(couponPendingExchange)}
+          title="Exchange Voucher"
+          description={
+            couponPendingExchange
+              ? `Exchange ${couponPendingExchange.pointCost} points for ${couponPendingExchange.discount}% OFF voucher "${couponPendingExchange.name}"?`
+              : "Exchange points for this voucher?"
+          }
+          confirmText={exchangeLoading ? "Exchanging..." : "Exchange"}
+          confirmVariant="default"
+          confirmDisabled={Boolean(exchangeLoading)}
+          cancelDisabled={Boolean(exchangeLoading)}
+          onConfirm={handleExchange}
+          onCancel={closeExchangeDialog}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-import AdminOrderManagementPage from "@/pages/admin/AdminOrderManagementPage";
 import {
   BrowserRouter as Router,
   Navigate,
@@ -15,12 +14,9 @@ import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { StaffDashboardPage } from "@/pages/staff/StaffDashboardPage";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
-import { AdminUserManagementPage } from "@/pages/admin/AdminUserManagementPage";
-import { AdminProductManagementPage } from "@/pages/admin/AdminProductManagementPage";
 import { AdminProductCreatePage } from "@/pages/admin/AdminProductCreatePage";
 import { AdminProductEditPage } from "@/pages/admin/AdminProductEditPage";
-import { AdminCategoryManagementPage } from "@/pages/admin/AdminCategoryManagementPage";
-import { AdminBlogManagementPage } from "@/pages/admin/AdminBlogManagementPage";
+import { AdminCategoryEditPage } from "@/pages/admin/AdminCategoryEditPage";
 import { BlogDetailPage } from "@/pages/blogs/BlogDetailPage";
 import { BlogListPage } from "@/pages/blogs/BlogListPage";
 import { ClientCreateBlogPage } from "@/pages/blogs/ClientCreateBlogPage";
@@ -145,6 +141,51 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
           <StaffDashboardPage
             user={auth.user}
             onLogout={auth.onLogout}
+            activeTab="orders"
+          />
+        }
+      />
+      <Route
+        path="/staff/dashboard"
+        element={<Navigate to="/staff" replace />}
+      />
+      <Route
+        path="/staff/orders"
+        element={
+          <StaffDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="orders"
+          />
+        }
+      />
+      <Route
+        path="/staff/inventory"
+        element={
+          <StaffDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="inventory"
+          />
+        }
+      />
+      <Route
+        path="/staff/blogs"
+        element={
+          <StaffDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="blogs"
+          />
+        }
+      />
+      <Route
+        path="/staff/vouchers"
+        element={
+          <StaffDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="vouchers"
           />
         }
       />
@@ -154,39 +195,43 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
           <AdminDashboardPage
             user={auth.user}
             onLogout={auth.onLogout}
+            activeTab="reports"
           />
         }
       />
       <Route
         path="/admin/dashboard"
-        element={
-          <AdminDashboardPage
-            user={auth.user}
-            onLogout={auth.onLogout}
-          />
-        }
+        element={<Navigate to="/admin" replace />}
       />
       <Route
         path="/admin/users"
         element={
-          <AdminUserManagementPage
+          <AdminDashboardPage
             user={auth.user}
             onLogout={auth.onLogout}
+            activeTab="users"
           />
         }
       />
       <Route
         path="/admin/products"
         element={
-          <AdminProductManagementPage
+          <AdminDashboardPage
             user={auth.user}
             onLogout={auth.onLogout}
+            activeTab="products"
           />
         }
       />
       <Route
         path="/admin/orders"
-        element={<AdminOrderManagementPage />}
+        element={
+          <AdminDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="orders"
+          />
+        }
       />
       <Route
         path="/admin/products/create"
@@ -209,7 +254,17 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
       <Route
         path="/admin/categories"
         element={
-          <AdminCategoryManagementPage
+          <AdminDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="categories"
+          />
+        }
+      />
+      <Route
+        path="/admin/categories/edit/:id"
+        element={
+          <AdminCategoryEditPage
             user={auth.user}
             onLogout={auth.onLogout}
           />
@@ -218,9 +273,20 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
       <Route
         path="/admin/blogs"
         element={
-          <AdminBlogManagementPage
+          <AdminDashboardPage
             user={auth.user}
             onLogout={auth.onLogout}
+            activeTab="blogs"
+          />
+        }
+      />
+      <Route
+        path="/admin/vouchers"
+        element={
+          <AdminDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="vouchers"
           />
         }
       />

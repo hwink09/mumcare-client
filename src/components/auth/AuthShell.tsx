@@ -72,8 +72,8 @@ export function AuthShell({
     <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,rgba(253,242,248,0.72),rgba(255,255,255,1)_28%,rgba(239,246,255,0.88)_100%)] px-4 py-6 sm:px-6">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -left-24 top-24 size-72 rounded-full bg-pink-200/30 blur-3xl" />
-        <div className="absolute right-[-80px] top-16 size-80 rounded-full bg-sky-200/35 blur-3xl" />
-        <div className="absolute bottom-[-100px] left-1/2 size-96 -translate-x-1/2 rounded-full bg-fuchsia-100/40 blur-3xl" />
+        <div className="absolute -right-20 top-16 size-80 rounded-full bg-sky-200/35 blur-3xl" />
+        <div className="absolute -bottom-25 left-1/2 size-96 -translate-x-1/2 rounded-full bg-fuchsia-100/40 blur-3xl" />
       </div>
 
       <Button

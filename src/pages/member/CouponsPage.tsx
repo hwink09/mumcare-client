@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
 import couponService from "@/services/couponService";
 import authService from "@/services/userService";
@@ -27,6 +28,7 @@ export function CouponsPage({ user }: CouponsPageProps) {
   const [points, setPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState<string | null>(null);
+  const [couponPendingExchange, setCouponPendingExchange] = useState<Coupon | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,17 +66,27 @@ export function CouponsPage({ user }: CouponsPageProps) {
     }
   };
 
-  const handleExchange = async (coupon: Coupon) => {
+  const openExchangeDialog = (coupon: Coupon) => {
     if (points < (coupon.pointCost || 0)) {
         alert(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
         return;
     }
-    if (!window.confirm(`Exchange ${coupon.pointCost} points for ${coupon.discount}% OFF voucher?`)) return;
+    setCouponPendingExchange(coupon);
+  };
 
-    setExchangeLoading(coupon._id);
+  const closeExchangeDialog = () => {
+    if (exchangeLoading) return;
+    setCouponPendingExchange(null);
+  };
+
+  const handleExchange = async () => {
+    if (!couponPendingExchange) return;
+
+    setExchangeLoading(couponPendingExchange._id);
     try {
-        await authService.redeemCoupon(coupon._id);
+        await authService.redeemCoupon(couponPendingExchange._id);
         alert("Voucher exchanged successfully!");
+        setCouponPendingExchange(null);
         void loadData();
     } catch (err: any) {
         alert(err?.response?.data?.message || err?.message || "Exchange failed.");
@@ -177,7 +189,7 @@ export function CouponsPage({ user }: CouponsPageProps) {
                             <Button 
                               className="w-full bg-amber-500 hover:bg-amber-600 text-white"
                               disabled={exchangeLoading === coupon._id || points < (coupon.pointCost || 0)}
-                              onClick={() => handleExchange(coupon)}
+                              onClick={() => openExchangeDialog(coupon)}
                             >
                               {exchangeLoading === coupon._id ? "Exchanging..." : `Exchange for ${coupon.pointCost} pts`}
                             </Button>
@@ -190,6 +202,21 @@ export function CouponsPage({ user }: CouponsPageProps) {
             </Card>
           )}
         </div>
+        <ConfirmDialog
+          open={Boolean(couponPendingExchange)}
+          title="Exchange Voucher"
+          description={
+            couponPendingExchange
+              ? `Exchange ${couponPendingExchange.pointCost} points for ${couponPendingExchange.discount}% OFF voucher "${couponPendingExchange.name}"?`
+              : "Exchange points for this voucher?"
+          }
+          confirmText={exchangeLoading ? "Exchanging..." : "Exchange"}
+          confirmVariant="default"
+          confirmDisabled={Boolean(exchangeLoading)}
+          cancelDisabled={Boolean(exchangeLoading)}
+          onConfirm={handleExchange}
+          onCancel={closeExchangeDialog}
+        />
       </div>
     </div>
   );
