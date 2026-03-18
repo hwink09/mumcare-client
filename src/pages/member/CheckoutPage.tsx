@@ -2,11 +2,11 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createOrder } from "@/services/orderService";
+import { formatVND } from "@/lib/currency";
+import { createOrder, getMyOrders } from "@/services/orderService";
 import type { CartItem } from "@/hooks/useAuth";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
 import couponService from "@/services/couponService";
-import { formatVND } from "@/lib/currency";
 
 interface CheckoutPageProps {
     isLoggedIn: boolean;
@@ -24,17 +24,15 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [myCoupons, setMyCoupons] = useState<any[]>([]);
-    const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
     
     // Fetch user coupons on mount — also filter out ones already in active orders
     useEffect(() => {
         if (!isLoggedIn) return;
         (async () => {
             try {
-                const { default: orderService } = await import("@/services/orderService");
                 const [couponsRes, ordersRes] = await Promise.all([
                     couponService.getMyCoupons(),
-                    orderService.getMyOrders()
+                    getMyOrders()
                 ]);
                 const coupons: any[] = Array.isArray(couponsRes) ? couponsRes : couponsRes?.data || [];
                 const orders: any[] = Array.isArray(ordersRes) ? ordersRes : ordersRes?.data || [];
@@ -79,22 +77,18 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
 
             if (!found) {
                 setCouponMessage({ type: 'error', text: "Voucher not found or not applicable." });
-                setSelectedCouponId(null);
                 return;
             }
 
             if (found.isExpired) {
                 setCouponMessage({ type: 'error', text: "This voucher has expired." });
-                setSelectedCouponId(null);
                 return;
             }
 
             const discount = Math.floor((subtotal * found.discount) / 100);
-            setSelectedCouponId(found._id || found.couponId);
-            setCouponMessage({ type: 'success', text: `Voucher applied! You will save $${discount.toFixed(2)} (${found.discount}% off).` });
+            setCouponMessage({ type: 'success', text: `Voucher applied! You will save ${formatVND(discount)} (${found.discount}% off).` });
         } catch (err: any) {
             setCouponMessage({ type: 'error', text: err.message || "Failed to validate voucher." });
-            setSelectedCouponId(null);
         } finally {
             setValidatingCoupon(false);
         }
@@ -184,7 +178,7 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
                             <label className="text-sm font-medium">Select Voucher (Optional)</label>
                             {myCoupons.length === 0 ? (
                                 <div className="text-sm text-muted-foreground p-3 border rounded-md bg-slate-50">
-                                    You don't have any vouchers. Exchange points for vouchers in the Loyalty page.
+                                    You don&apos;t have any vouchers. Exchange points for vouchers in the Loyalty page.
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-2 relative">

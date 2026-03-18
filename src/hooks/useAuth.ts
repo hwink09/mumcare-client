@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getToken } from "@/utils/token";
+import { extractImageUrl, normalizeImageList } from "@/lib/image";
 import type { Product } from "@/types/product";
 import { getCurrentUser, logoutUser } from "@/services/userService";
+import {
+  addToCartApi,
+  clearCartApi,
+  getCartItemsApi,
+  removeCartItemApi,
+  updateCartItemApi,
+} from "@/services/cartService";
 
 export interface CurrentUser {
   _id?: string;
@@ -81,30 +89,245 @@ export function useAuth() {
 // cart items stored in state always include an `id` string
 export type CartItem = Product & { quantity: number; id: string };
 
-export function useCart() {
+type UseCartOptions = {
+  isLoggedIn?: boolean;
+  ownerKey?: string | null;
+};
+
+const GUEST_CART_STORAGE_KEY = "mumcare_guest_cart";
+const AUTH_CART_STORAGE_PREFIX = "mumcare_auth_cart_";
+
+const getAuthCartStorageKey = (ownerKey: string) =>
+  `${AUTH_CART_STORAGE_PREFIX}${encodeURIComponent(ownerKey)}`;
+
+const normalizeStoredCartItem = (item: any): CartItem | null => {
+  const id = String(item?.id || item?._id || "").trim();
+  if (!id) return null;
+
+  const images = normalizeImageList(item?.images);
+  const image = extractImageUrl(item?.image) || images[0] || "";
+
+  return {
+    ...item,
+    _id: String(item?._id || item?.id || id),
+    id,
+    name: item?.name || item?.title || "",
+    title: item?.title,
+    description: item?.description || "",
+    price: Number(item?.price ?? 0) || 0,
+    image,
+    images,
+    quantity: Math.max(1, Number(item?.quantity ?? item?.count ?? 1) || 1),
+  };
+};
+
+const readStoredCart = (storageKey: string) => {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map(normalizeStoredCartItem)
+      .filter((item): item is CartItem => Boolean(item));
+  } catch {
+    return [];
+  }
+};
+
+const writeStoredCart = (storageKey: string, items: CartItem[]) => {
+  if (items.length === 0) {
+    localStorage.removeItem(storageKey);
+    return;
+  }
+
+  localStorage.setItem(storageKey, JSON.stringify(items));
+};
+
+const clearStoredCart = (storageKey: string) => {
+  localStorage.removeItem(storageKey);
+};
+
+const buildCartItem = (product: Product) => {
+  const id = String(product.id || product._id || "").trim();
+  const images = normalizeImageList(product.images);
+  const image = extractImageUrl(product.image) || images[0] || "";
+
+  return {
+    ...product,
+    _id: String(product._id || product.id || id),
+    id,
+    name: product.name || product.title || "",
+    title: product.title,
+    description: product.description || "",
+    price: Number(product.price ?? 0) || 0,
+    image,
+    images: images.length ? images : image ? [image] : [],
+    quantity: 1,
+  } as CartItem;
+};
+
+const upsertCartItem = (items: CartItem[], product: Product) => {
+  const nextItem = buildCartItem(product);
+  if (!nextItem.id) return items;
+
+  const existing = items.find((item) => item.id === nextItem.id);
+  if (!existing) return [...items, nextItem];
+
+  return items.map((item) =>
+    item.id === nextItem.id ? { ...item, quantity: item.quantity + 1 } : item,
+  );
+};
+
+const setCartItemQuantity = (items: CartItem[], productId: string, quantity: number) => {
+  return items
+    .map((item) => (item.id === productId ? { ...item, quantity } : item))
+    .filter((item) => item.quantity > 0);
+};
+
+const withoutCartItem = (items: CartItem[], productId: string) =>
+  items.filter((item) => item.id !== productId);
+
+const cartNeedsRefresh = (items: CartItem[]) =>
+  items.some((item) => !(item.name || item.title) || Number(item.price || 0) <= 0 || !(item.image || item.images?.length));
+
+export function useCart({ isLoggedIn = false, ownerKey = null }: UseCartOptions = {}) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const itemsRef = useRef(items);
+  const hydratedOwnerRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const persistItems = (nextItems: CartItem[]) => {
+    if (isLoggedIn && ownerKey) {
+      writeStoredCart(getAuthCartStorageKey(ownerKey), nextItems);
+      return;
+    }
+
+    clearStoredCart(GUEST_CART_STORAGE_KEY);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isLoggedIn) {
+      hydratedOwnerRef.current = null;
+      clearStoredCart(GUEST_CART_STORAGE_KEY);
+      setItems([]);
+      return;
+    }
+
+    const resolvedOwner = ownerKey || "__authenticated__";
+    if (hydratedOwnerRef.current === resolvedOwner) return;
+
+    hydratedOwnerRef.current = resolvedOwner;
+
+    const hydrateCart = async () => {
+      const authStorageKey = ownerKey ? getAuthCartStorageKey(ownerKey) : null;
+      const cachedAuthItems = authStorageKey ? readStoredCart(authStorageKey) : [];
+
+      if (cachedAuthItems.length > 0 && !cartNeedsRefresh(cachedAuthItems)) {
+        if (!cancelled) setItems(cachedAuthItems);
+        return;
+      }
+
+      try {
+        const serverItems = await getCartItemsApi();
+        if (cancelled) return;
+
+        if (!serverItems.length && cachedAuthItems.length > 0) {
+          setItems(cachedAuthItems);
+          return;
+        }
+
+        if (!serverItems.length) return;
+
+        setItems(serverItems);
+        if (authStorageKey) writeStoredCart(authStorageKey, serverItems);
+      } catch (error) {
+        if (!cancelled && cachedAuthItems.length > 0) {
+          setItems(cachedAuthItems);
+        }
+        console.error("Failed to hydrate cart from API:", error);
+      }
+    };
+
+    void hydrateCart();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, ownerKey]);
 
   const addToCart = (product: Product) => {
-    const pid = product.id || product._id || "";
-    setItems((prev) => {
-      const existing = prev.find((p) => p.id === pid);
-      if (existing) {
-        return prev.map((p) => (p.id === pid ? { ...p, quantity: p.quantity + 1 } : p));
-      }
-      // spread product and ensure id string present
-      return [...prev, { ...product, id: pid, quantity: 1 } as CartItem];
+    const productId = String(product.id || product._id || "").trim();
+    if (!productId || !isLoggedIn) return false;
+
+    const nextItems = upsertCartItem(itemsRef.current, product);
+    setItems(nextItems);
+    persistItems(nextItems);
+
+    void addToCartApi(productId, 1).catch((error) => {
+      console.error("Failed to sync add-to-cart:", error);
     });
+
+    return true;
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
-    setItems((prev) => prev.map((p) => (p.id === productId ? { ...p, quantity } : p)).filter((p) => p.quantity > 0));
+    if (!isLoggedIn) return false;
+
+    const safeQuantity = Math.max(0, quantity);
+    const nextItems =
+      safeQuantity > 0
+        ? setCartItemQuantity(itemsRef.current, productId, safeQuantity)
+        : withoutCartItem(itemsRef.current, productId);
+
+    setItems(nextItems);
+    persistItems(nextItems);
+
+    const syncAction =
+      safeQuantity > 0
+        ? updateCartItemApi(productId, safeQuantity)
+        : removeCartItemApi(productId);
+
+    void syncAction.catch((error) => {
+      console.error("Failed to sync cart quantity:", error);
+    });
+
+    return true;
   };
 
   const removeItem = (productId: string) => {
-    setItems((prev) => prev.filter((p) => p.id !== productId));
+    if (!isLoggedIn) return false;
+
+    const nextItems = withoutCartItem(itemsRef.current, productId);
+    setItems(nextItems);
+    persistItems(nextItems);
+
+    void removeCartItemApi(productId).catch((error) => {
+      console.error("Failed to sync cart removal:", error);
+    });
+
+    return true;
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    if (!isLoggedIn) return false;
+
+    setItems([]);
+    persistItems([]);
+
+    void clearCartApi().catch((error) => {
+      console.error("Failed to sync cart clear:", error);
+    });
+
+    return true;
+  };
 
   const cartItemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
 

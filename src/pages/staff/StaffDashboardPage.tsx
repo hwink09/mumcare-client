@@ -53,9 +53,6 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState<string | null>(null);
 
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [orderNote, setOrderNote] = useState<string>("");
-
   const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
   const isAdmin = useMemo(() => user?.role === "admin", [user]);
 
@@ -374,10 +371,11 @@ export function StaffDashboardPage({ user, onLogout }: StaffDashboardProps) {
                                         Cancel
                                       </Button>
                                     )}
-                                    <Button size="sm" variant="ghost" onClick={() => {
-                                      setSelectedOrderId(order._id)
-                                      setOrderNote("")
-                                    }}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => window.alert(`Note support for order ${order.orderCode || order._id} is not available yet.`)}
+                                    >
                                       Note
                                     </Button>
                                   </div>

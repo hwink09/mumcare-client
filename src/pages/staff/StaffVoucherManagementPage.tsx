@@ -223,7 +223,7 @@ export function StaffVoucherManagementPage({ isEmbedded = false }: StaffVoucherM
       </form>
     );
   } else if (vouchers.length === 0) {
-    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click "Add Voucher" to create one.</div>;
+    content = <div className="text-center py-10 text-muted-foreground">No vouchers found. Click Add Voucher to create one.</div>;
   } else {
     content = (
       <div className="overflow-x-auto">

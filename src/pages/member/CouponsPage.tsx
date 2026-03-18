@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CurrentUser } from "@/hooks/useAuth";
+import couponService from "@/services/couponService";
+import authService from "@/services/userService";
 
 type CouponsPageProps = {
   user?: CurrentUser | null;
@@ -32,16 +34,13 @@ export function CouponsPage({ user }: CouponsPageProps) {
       navigate("/login");
       return;
     }
-    loadData();
+    void loadData();
   }, [user, navigate]);
 
   const loadData = async () => {
     setError(null);
     setLoading(true);
     try {
-      const { default: couponService } = await import("@/services/couponService");
-      const { default: authService } = await import("@/services/userService");
-      
       const [myCouponsData, allCouponsData, meData] = await Promise.all([
         couponService.getMyCoupons(),
         couponService.getAll(),
@@ -74,10 +73,9 @@ export function CouponsPage({ user }: CouponsPageProps) {
 
     setExchangeLoading(coupon._id);
     try {
-        const { default: authService } = await import("@/services/userService");
         await authService.redeemCoupon(coupon._id);
         alert("Voucher exchanged successfully!");
-        loadData(); // Refetch Data
+        void loadData();
     } catch (err: any) {
         alert(err?.response?.data?.message || err?.message || "Exchange failed.");
     } finally {
