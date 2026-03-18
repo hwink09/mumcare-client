@@ -6,12 +6,12 @@ const couponService = {
     return data.data || data;
   },
 
-  create: async (payload: { name: string; discount: number; expiry: number; }) => {
+  create: async (payload: { name: string; discount: number; expiry: number; pointCost?: number; }) => {
     const data: any = await axiosInstance.post('/coupons', payload);
     return data.data || data;
   },
 
-  update: async (couponId: string, payload: { name?: string; discount?: number; expiry?: number; }) => {
+  update: async (couponId: string, payload: { name?: string; discount?: number; expiry?: number; pointCost?: number; }) => {
     const data: any = await axiosInstance.put(`/coupons/${encodeURIComponent(couponId)}`, payload);
     return data.data || data;
   },

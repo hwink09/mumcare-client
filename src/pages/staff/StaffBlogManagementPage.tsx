@@ -12,7 +12,7 @@ import type { CurrentUser } from "@/hooks/useAuth";
 import { getBlogs, createBlog, updateBlog, deleteBlog } from "@/services/blogService";
 import { getBlogCategories } from "@/services/categoryService";
 
-type AdminBlogManagementPageProps = {
+type StaffBlogManagementPageProps = {
   user?: CurrentUser | null;
   onLogout: () => void;
   isEmbedded?: boolean;
@@ -23,7 +23,7 @@ type Blog = {
   title: string;
   description: string;
   categoryId?: string;
-  author?: string;
+  author?: Array<{ userId: string; fullName: string }>;
   image?: string;
   likes?: string[];
   dislikes?: string[];
@@ -36,7 +36,7 @@ type Category = {
   title: string;
 };
 
-export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlogManagementPageProps) {
+export function StaffBlogManagementPage({ user, onLogout, isEmbedded }: StaffBlogManagementPageProps) {
   const navigate = useNavigate();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -52,19 +52,19 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
   });
   const [image, setImage] = useState<File | null>(null);
 
-  const isAdmin = useMemo(() => user?.role === "admin", [user]);
+  const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
-    if (!isAdmin) {
+    if (!isStaff) {
       navigate("/");
       return;
     }
     loadData();
-  }, [user, isAdmin, navigate]);
+  }, [user, isStaff, navigate]);
 
   const loadData = async () => {
     setError(null);
@@ -283,22 +283,24 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4 shrink-0 mt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEditDialog(blog)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(blog._id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
+                { (user?.role === "admin" || (blog.author && Array.isArray(blog.author) && blog.author.some((a: any) => a.userId === user?._id))) && (
+                  <div className="flex gap-2 ml-4 shrink-0 mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditDialog(blog)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(blog._id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -310,7 +312,7 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
   if (isEmbedded) return <>{content}</>;
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-100 text-slate-900">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-8">
           <div>
@@ -334,7 +336,7 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold">
                   {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div>
@@ -373,3 +375,5 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
     </div>
   );
 }
+
+export default StaffBlogManagementPage;

@@ -60,7 +60,20 @@ export function ProductListPage({
   }, [page, limit]);
 
   const handleNavigate = (pageKey: string) => {
-    navigate(resolvePageRoute(pageKey));
+    if (pageKey === "home") navigate("/");
+    else if (pageKey === "products") navigate("/products");
+    else if (pageKey === "profile") navigate("/profile");
+    else if (pageKey === "orders") navigate("/orders");
+    else if (pageKey === "reviews") navigate("/reviews");
+    else if (pageKey === "loyalty") navigate("/loyalty");
+    else if (pageKey === "blogs") navigate("/blogs");
+    else if (pageKey === "cart") navigate("/cart");
+    else if (pageKey === "contact") navigate("/contact");
+    else if (pageKey === "about") navigate("/about");
+    else if (pageKey === "staff-login") navigate("/staff/login");
+    else if (pageKey === "admin_dashboard") navigate("/admin/dashboard");
+    else if (pageKey === "admin_blogs") navigate("/admin/blogs");
+    else navigate("/");
   };
 
   const setParam = (key: string, value: string) => {

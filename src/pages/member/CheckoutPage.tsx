@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,35 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
     const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [myCoupons, setMyCoupons] = useState<any[]>([]);
+    const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
+    
+    // Fetch user coupons on mount — also filter out ones already in active orders
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        (async () => {
+            try {
+                const { default: orderService } = await import("@/services/orderService");
+                const [couponsRes, ordersRes] = await Promise.all([
+                    couponService.getMyCoupons(),
+                    orderService.getMyOrders()
+                ]);
+                const coupons: any[] = Array.isArray(couponsRes) ? couponsRes : couponsRes?.data || [];
+                const orders: any[] = Array.isArray(ordersRes) ? ordersRes : ordersRes?.data || [];
+                
+                // Filter out coupons already applied to active (pending/confirmed/shipped) orders
+                const activeOrderCouponCodes = new Set(
+                    orders
+                        .filter((o: any) => o.couponCode && !['delivered', 'canceled'].includes(o.status))
+                        .map((o: any) => o.couponCode)
+                );
+                const available = coupons.filter((c: any) => !activeOrderCouponCodes.has(c.name));
+                setMyCoupons(available);
+            } catch (err) {
+                console.error("Failed to load checkout data:", err);
+            }
+        })();
+    }, [isLoggedIn]);
 
     const subtotal = useMemo(() => {
         return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -50,21 +79,22 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
 
             if (!found) {
                 setCouponMessage({ type: 'error', text: "Voucher not found or not applicable." });
+                setSelectedCouponId(null);
                 return;
             }
 
             if (found.isExpired) {
                 setCouponMessage({ type: 'error', text: "This voucher has expired." });
+                setSelectedCouponId(null);
                 return;
             }
 
             const discount = Math.floor((subtotal * found.discount) / 100);
-            setCouponMessage({
-                type: 'success',
-                text: `Voucher applied! You will save ${formatVND(discount)} (${found.discount}% off).`,
-            });
+            setSelectedCouponId(found._id || found.couponId);
+            setCouponMessage({ type: 'success', text: `Voucher applied! You will save $${discount.toFixed(2)} (${found.discount}% off).` });
         } catch (err: any) {
             setCouponMessage({ type: 'error', text: err.message || "Failed to validate voucher." });
+            setSelectedCouponId(null);
         } finally {
             setValidatingCoupon(false);
         }
@@ -151,29 +181,42 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Voucher Code (optional)</label>
-                            <div className="flex gap-2">
-                                <input
-                                    className="flex-1 h-10 rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all uppercase"
-                                    placeholder="Ex: SUMMER10"
-                                    value={couponCode}
-                                    onChange={(e) => {
-                                        setCouponCode(e.target.value.toUpperCase());
-                                        setCouponMessage(null); // clear message when user types
-                                    }}
-                                />
-                                <Button 
-                                    variant="secondary" 
-                                    onClick={handleApplyCoupon}
-                                    disabled={validatingCoupon || !couponCode.trim()}
-                                >
-                                    {validatingCoupon ? "Checking..." : "Apply"}
-                                </Button>
-                            </div>
-                            {couponMessage && (
-                                <p className={`text-sm mt-1 ${couponMessage.type === 'success' ? 'text-emerald-600 font-medium' : 'text-rose-600'}`}>
-                                    {couponMessage.text}
-                                </p>
+                            <label className="text-sm font-medium">Select Voucher (Optional)</label>
+                            {myCoupons.length === 0 ? (
+                                <div className="text-sm text-muted-foreground p-3 border rounded-md bg-slate-50">
+                                    You don't have any vouchers. Exchange points for vouchers in the Loyalty page.
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2 relative">
+                                    <select
+                                      className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
+                                      value={couponCode}
+                                      onChange={(e) => {
+                                          setCouponCode(e.target.value);
+                                          setCouponMessage(null);
+                                      }}
+                                    >
+                                        <option value="">-- No voucher selected --</option>
+                                        {myCoupons.map((c: any) => (
+                                            <option key={c._id} value={c.name} disabled={c.isExpired || new Date(c.expiry) < new Date()}>
+                                                {c.name} - {c.discount}% OFF (Exp: {new Date(c.expiry).toLocaleDateString()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <Button 
+                                        variant="secondary" 
+                                        onClick={handleApplyCoupon}
+                                        disabled={validatingCoupon || !couponCode}
+                                        className="w-full mt-2"
+                                    >
+                                        {validatingCoupon ? "Applying..." : "Apply Selected Voucher"}
+                                    </Button>
+                                    {couponMessage && (
+                                        <p className={`text-sm mt-1 ${couponMessage.type === 'success' ? 'text-emerald-600 font-medium' : 'text-rose-600'}`}>
+                                            {couponMessage.text}
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
 

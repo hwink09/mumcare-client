@@ -51,12 +51,8 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RequestWithRetry;
     const status = error.response?.status;
-    const msg = (error.response?.data as { message?: string })?.message || "";
-    const isExpired =
-      status === 401 ||
-      status === 403 ||
-      status === 410 ||
-      msg.toLowerCase().includes("token expired");
+    const msg = (error.response?.data as { message?: string })?.message || '';
+    const isExpired = status === 401 || status === 403 || status === 410 || msg.toLowerCase().includes('token expired');
 
     const isAuthEndpoint =
       originalRequest?.url?.includes("/users/auth/login") ||

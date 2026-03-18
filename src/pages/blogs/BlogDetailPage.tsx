@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getBlogById } from "@/services/blogService";
+import { Card, CardContent } from "@/components/ui/card";
+import { getBlogById, likeBlog, dislikeBlog } from "@/services/blogService";
+import { useAuth } from "@/hooks/useAuth";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 
 type Blog = {
   _id: string;
   title: string;
   description?: string;
-  content?: string;
   image?: string;
   createdAt?: string;
+  likes?: string[];
+  dislikes?: string[];
 };
 
 export function BlogDetailPage() {
@@ -18,32 +22,83 @@ export function BlogDetailPage() {
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  const loadBlog = async () => {
+    if (!id) return;
+    try {
+      const res = await getBlogById(id);
+      const blogData = (res && (Array.isArray(res) ? res[0] : (res as { data?: unknown }).data || res)) as Blog | undefined;
+      setBlog(blogData ?? null);
+    } catch {
+      setError("Failed to load article. Please try again.");
+      setBlog(null);
+    }
+  };
 
   useEffect(() => {
-    if (!id) return;
     let mounted = true;
     setLoading(true);
     setError(null);
 
-    (async () => {
-      try {
-        const res = await getBlogById(id);
-        const blog = (res && (Array.isArray(res) ? res[0] : (res as { data?: unknown }).data || res)) as Blog | undefined;
-        if (mounted) setBlog(blog ?? null);
-      } catch {
-        if (mounted) {
-          setError("Failed to load article. Please try again.");
-          setBlog(null);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
+    loadBlog().finally(() => {
+      if (mounted) setLoading(false);
+    });
 
     return () => {
       mounted = false;
     };
   }, [id]);
+
+  const handleLike = async () => {
+    if (loading) return;
+    if (!user) {
+      alert("Please login to like this blog.");
+      return;
+    }
+    if (user.role && user.role !== "client") {
+      alert("Only regular clients can like or dislike blogs. Staff and Admins cannot.");
+      return;
+    }
+    if (!id || !blog) return;
+
+    try {
+      await likeBlog(id);
+      await loadBlog();
+    } catch (err: any) {
+      console.error(err);
+      if (err.message && err.message.toLowerCase().includes("forbidden")) {
+        alert("Your role does not have permission to like blogs.");
+      }
+    }
+  };
+
+  const handleDislike = async () => {
+    if (loading) return;
+    if (!user) {
+      alert("Please login to dislike this blog.");
+      return;
+    }
+    if (user.role && user.role !== "client") {
+      alert("Only regular clients can like or dislike blogs. Staff and Admins cannot.");
+      return;
+    }
+    if (!id || !blog) return;
+
+    try {
+      await dislikeBlog(id);
+      await loadBlog();
+    } catch (err: any) {
+      console.error(err);
+      if (err.message && err.message.toLowerCase().includes("forbidden")) {
+        alert("Your role does not have permission to dislike blogs.");
+      }
+    }
+  };
+
+  const userId = user ? (user._id || user.id) : null;
+  const isLiked = userId ? blog?.likes?.includes(userId as string) : false;
+  const isDisliked = userId ? blog?.dislikes?.includes(userId as string) : false;
 
   return (
     <div className="min-h-screen bg-linear-to-b from-pink-50 via-white to-blue-50">
@@ -66,8 +121,26 @@ export function BlogDetailPage() {
             <div className="pt-6">
               <h1 className="text-3xl font-bold mb-3">{blog.title}</h1>
               <p className="text-sm text-muted-foreground mb-6">{blog.createdAt ? new Date(blog.createdAt).toLocaleString() : ""}</p>
-              <div className="prose max-w-none text-sm leading-7 text-gray-700 whitespace-pre-wrap">
-                {blog.content || blog.description || "No content available."}
+              <div className="prose max-w-none text-sm leading-7 text-gray-700 whitespace-pre-wrap mb-8">
+                {blog.description || "No content available."}
+              </div>
+              <div className="flex items-center gap-4 mt-6 pt-6 border-t">
+                <Button 
+                  variant={isLiked ? "default" : "outline"}
+                  onClick={handleLike}
+                  className="flex items-center gap-2"
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  <span>({blog.likes?.length || 0})</span>
+                </Button>
+                <Button 
+                  variant={isDisliked ? "default" : "outline"}
+                  onClick={handleDislike}
+                  className="flex items-center gap-2"
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                  <span>({blog.dislikes?.length || 0})</span>
+                </Button>
               </div>
             </div>
           </div>

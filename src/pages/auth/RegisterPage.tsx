@@ -43,15 +43,13 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
     setLoading(true);
 
     try {
-      const result = await registerUser({
+      await registerUser({
         firstName,
         lastName,
         email,
         phone,
         password,
       });
-      console.log("Registration successful:", result);
-      // Có thể redirect hoặc cập nhật state ở đây
       if (onClose) onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");

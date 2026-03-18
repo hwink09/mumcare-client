@@ -12,12 +12,12 @@ const blogService = {
   },
 
   likeBlog: async (blogId: string) => {
-    const data: any = await axiosInstance.put(`/blogs/${encodeURIComponent(blogId)}/like`);
+    const data: any = await axiosInstance.put(`/blogs/${encodeURIComponent(blogId)}/like`, {});
     return data.data || data;
   },
 
   dislikeBlog: async (blogId: string) => {
-    const data: any = await axiosInstance.put(`/blogs/${encodeURIComponent(blogId)}/dislike`);
+    const data: any = await axiosInstance.put(`/blogs/${encodeURIComponent(blogId)}/dislike`, {});
     return data.data || data;
   },
 
@@ -59,3 +59,5 @@ export const getBlogCategories = blogService.getCategories;
 export const createBlog = blogService.create;
 export const updateBlog = blogService.update;
 export const deleteBlog = blogService.delete;
+export const likeBlog = blogService.likeBlog;
+export const dislikeBlog = blogService.dislikeBlog;

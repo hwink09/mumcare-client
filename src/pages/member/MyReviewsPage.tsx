@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import type { CurrentUser } from "@/hooks/useAuth";
 import { getProducts } from "@/services/productService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 
-export function MyReviewsPage() {
+export function MyReviewsPage({ user, isLoggedIn }: { user?: CurrentUser; isLoggedIn: boolean }) {
   const navigate = useNavigate();
-  const { user, isLoggedIn, loading: authLoading } = useAuth();
   
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
     if (!isLoggedIn || !user) {
       navigate("/login");
       return;
@@ -35,7 +33,7 @@ export function MyReviewsPage() {
         // Backend limits to 100 per page, so paginate up to 10 pages
         while (currentPage <= totalPages && currentPage <= 10) {
           const res = await getProducts({ limit: 100, page: currentPage });
-          const products = res.data?.products || res.products || (Array.isArray(res) ? res : []);
+          const products = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
           
           if (Array.isArray(products)) {
             allProducts = [...allProducts, ...products];
@@ -85,9 +83,9 @@ export function MyReviewsPage() {
     return () => {
       mounted = false;
     };
-  }, [authLoading, isLoggedIn, user, navigate]);
+  }, [isLoggedIn, user, navigate]);
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-muted-foreground">Loading reviews...</div>
