@@ -9,6 +9,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { updateProduct, getCategories, getProducts, getProductById } from "@/services/productService";
+import toast from "react-hot-toast";
 
 type AdminProductEditPageProps = {
   user?: CurrentUser | null;
@@ -151,9 +152,12 @@ export function AdminProductEditPage({ user, onLogout }: AdminProductEditPagePro
       if (!id) throw new Error("Product ID missing");
       
       await updateProduct(id, submitData);
+      toast.success("Product updated successfully!");
       navigate("/admin/products");
     } catch (err: any) {
-      setError(err?.message || "Failed to edit product");
+      const msg = err?.message || "Failed to edit product";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

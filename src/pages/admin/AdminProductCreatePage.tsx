@@ -9,6 +9,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { createProduct, getCategories, getProducts } from "@/services/productService";
+import toast from "react-hot-toast";
 
 type AdminProductCreatePageProps = {
   user?: CurrentUser | null;
@@ -105,9 +106,12 @@ export function AdminProductCreatePage({ user, onLogout }: AdminProductCreatePag
       });
 
       await createProduct(submitData);
+      toast.success("Product created successfully!");
       navigate("/admin/products");
     } catch (err: any) {
-      setError(err?.message || "Failed to create product");
+      const msg = err?.message || "Failed to create product";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

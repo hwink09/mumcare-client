@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { AuthField } from "@/components/auth/AuthField";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { registerUser } from "@/services/userService";
+import toast from "react-hot-toast";
 
 interface RegisterPageProps {
   onClose?: () => void;
@@ -71,6 +72,8 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
         password,
       });
 
+      toast.success("Account created successfully!");
+
       if (onSwitchToLogin) {
         onSwitchToLogin();
       } else if (onClose) {
@@ -79,7 +82,9 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
         navigate("/login");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      const msg = err instanceof Error ? err.message : "Registration failed";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

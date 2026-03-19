@@ -11,6 +11,7 @@ import { formatVND } from "@/lib/currency";
 import { createOrder, getMyOrders } from "@/services/orderService";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
 import couponService from "@/services/couponService";
+import toast from "react-hot-toast";
 
 // ensure cart items always have an id (mapped from server _id earlier)
 export type CartItem = Product & { quantity: number; id: string };
@@ -144,11 +145,15 @@ export function CartPage({
       const payload: { address: string; couponCode?: string } = { address: address.trim() };
       if (couponCode.trim()) payload.couponCode = couponCode.trim();
       const res = await createOrder(payload);
-      setOrderMessage((res as any)?.message || "Order placed successfully!");
+      const msg = (res as any)?.message || "Order placed successfully!";
+      setOrderMessage(msg);
+      toast.success(msg);
       clearCart?.();
       setTimeout(() => navigate("/orders"), 900);
     } catch (e: any) {
-      setOrderError(e.message || "Checkout failed. Please try again.");
+      const msg = e.message || "Checkout failed. Please try again.";
+      setOrderError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

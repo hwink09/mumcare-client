@@ -14,6 +14,7 @@ import { AuthField } from "@/components/auth/AuthField";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { loginUser } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 interface LoginPageProps {
   onClose?: () => void;
@@ -68,6 +69,7 @@ export function LoginPage({
 
       onLoginSuccess?.(loggedInUser);
       onClose?.();
+      toast.success("Welcome back!");
 
       if (role === "staff") {
         navigate("/staff");
@@ -77,7 +79,9 @@ export function LoginPage({
         navigate(redirectPath || "/");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
     }
   };

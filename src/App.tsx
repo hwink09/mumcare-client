@@ -6,6 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { useAuth, useCart } from "@/hooks/useAuth";
 import { MainLayout } from "@/layouts/MainLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
@@ -34,6 +35,7 @@ import { ProductDetailPage } from "@/pages/products/ProductDetailPage";
 import { ProductListPage } from "@/pages/products/ProductListPage";
 import { Header } from "@/components/shared/header";
 import { resolvePageRoute } from "@/lib/pageRoutes";
+import { ChatPopup } from "@/components/ChatPopup";
 import type { Product } from "@/types/product";
 
 function App() {
@@ -101,6 +103,7 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
   };
 
   return (
+    <>
     <Routes>
       <Route path="/" element={<MainLayout auth={auth} cart={cart} />} />
       <Route
@@ -186,6 +189,16 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
             user={auth.user}
             onLogout={auth.onLogout}
             activeTab="vouchers"
+          />
+        }
+      />
+      <Route
+        path="/staff/chat"
+        element={
+          <StaffDashboardPage
+            user={auth.user}
+            onLogout={auth.onLogout}
+            activeTab="chat"
           />
         }
       />
@@ -440,6 +453,9 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
         }
       />
     </Routes>
+    <ChatPopup user={auth.user || null} isLoggedIn={auth.isLoggedIn} />
+    <Toaster position="bottom-right" />
+    </>
   );
 }
 

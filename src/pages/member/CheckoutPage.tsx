@@ -7,6 +7,7 @@ import { createOrder, getMyOrders } from "@/services/orderService";
 import type { CartItem } from "@/hooks/useAuth";
 import { addToCartApi, clearCartApi } from "@/services/cartService";
 import couponService from "@/services/couponService";
+import toast from "react-hot-toast";
 
 interface CheckoutPageProps {
     isLoggedIn: boolean;
@@ -140,11 +141,15 @@ export function CheckoutPage({ isLoggedIn, cartItems, clearCart }: CheckoutPageP
 
             const res = await createOrder(payload);
 
-            setMessage(res?.message || "Order created successfully");
+            const msg = res?.message || "Order created successfully";
+            setMessage(msg);
+            toast.success(msg);
             clearCart();
             setTimeout(() => navigate("/orders"), 800);
         } catch (e: any) {
-            setError(e.message || "Checkout failed");
+            const msg = e.message || "Checkout failed";
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }

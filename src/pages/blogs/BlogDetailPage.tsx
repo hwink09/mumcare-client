@@ -9,6 +9,7 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { getBlogById, dislikeBlog, likeBlog } from "@/services/blogService";
 import { extractImageUrl } from "@/lib/image";
@@ -144,13 +145,13 @@ export function BlogDetailPage({
     if (loading || reactionLoading || !id || !blog) return;
 
     if (!isLoggedIn || !user) {
-      alert("Please login to react to this blog.");
+      toast.error("Please login to react to this blog.");
       onLoginClick();
       return;
     }
 
     if (user.role && user.role !== "client") {
-      alert("Only regular clients can like or dislike blogs. Staff and Admins cannot.");
+      toast.error("Only regular clients can like or dislike blogs.");
       return;
     }
 
@@ -168,7 +169,7 @@ export function BlogDetailPage({
     } catch (err: any) {
       console.error(err);
       if (err?.message && String(err.message).toLowerCase().includes("forbidden")) {
-        alert("Your role does not have permission to react to blogs.");
+        toast.error("Your role does not have permission to react to blogs.");
       }
     } finally {
       setReactionLoading(null);
