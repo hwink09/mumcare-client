@@ -5,9 +5,10 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getToken, removeToken } from "./token";
+import { API_V1_ROOT } from "./constants";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8017/v1",
+  baseURL: API_V1_ROOT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -82,7 +83,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const resp = await axios.post(
-          "http://localhost:8017/v1/users/auth/refresh-token",
+          `${API_V1_ROOT}/users/auth/refresh-token`,
           {},
           { withCredentials: true },
         );
