@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { getErrorMessage } from "@/lib/error";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { createBlog } from "@/services/blogService";
 import type { CurrentUser } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 interface ClientCreateBlogPageProps {
   user?: CurrentUser | null;
@@ -34,7 +36,9 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) {
-      setError("Title and content are required.");
+      const msg = "Title and content are required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -52,12 +56,15 @@ export function ClientCreateBlogPage({ user }: ClientCreateBlogPageProps) {
       setSuccess(true);
       setFormData({ title: "", content: "" });
       setImage(null);
+      toast.success("Blog post created successfully!");
 
       // Auto-redirect to blogs list after success
       setTimeout(() => navigate("/blogs"), 2000);
 
-    } catch (err: any) {
-      setError(err?.message || "Failed to create blog post.");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to create blog post.");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

@@ -14,6 +14,7 @@ import { AuthField } from "@/components/auth/AuthField";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { loginUser } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
+import { getErrorMessage } from "@/lib/error";
 import toast from "react-hot-toast";
 
 interface LoginPageProps {
@@ -79,7 +80,7 @@ export function LoginPage({
         navigate(redirectPath || "/");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Login failed";
+      const msg = getErrorMessage(err, "Login failed");
       setError(msg);
       toast.error(msg);
       setLoading(false);

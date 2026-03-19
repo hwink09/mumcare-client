@@ -20,9 +20,12 @@ const authService = {
   },
 
   logout: async () => {
-    const data: any = await axiosInstance.delete('/users/auth/logout');
-    removeToken();
-    return data;
+    try {
+      const data: any = await axiosInstance.delete('/users/auth/logout');
+      return data;
+    } finally {
+      removeToken();
+    }
   },
 
   getMe: async () => {

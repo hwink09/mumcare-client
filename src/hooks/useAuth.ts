@@ -3,6 +3,7 @@ import { getToken } from "@/utils/token";
 import { extractImageUrl, normalizeImageList } from "@/lib/image";
 import type { Product } from "@/types/product";
 import { getCurrentUser, logoutUser } from "@/services/userService";
+import toast from "react-hot-toast";
 import {
   addToCartApi,
   clearCartApi,
@@ -68,13 +69,16 @@ export function useAuth() {
   };
 
   const onLogout = async () => {
+    setUser(null);
+    setIsLoggedIn(false);
+    setLoading(false);
+    toast.success("Signed out successfully.");
+
     try {
       await logoutUser();
     } catch {
       // ignore
     }
-    setUser(null);
-    setIsLoggedIn(false);
   };
 
   return {

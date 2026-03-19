@@ -11,6 +11,7 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { CurrentUser } from "@/hooks/useAuth";
 import { formatVND } from "@/lib/currency";
+import { getErrorMessage } from "@/lib/error";
 import {
   deleteProduct,
   getCategories,
@@ -18,6 +19,7 @@ import {
   getProducts,
   updateProduct,
 } from "@/services/productService";
+import toast from "react-hot-toast";
 
 type AdminProductManagementPageProps = {
   user?: CurrentUser | null;
@@ -167,9 +169,12 @@ export function AdminProductManagementPage({
     try {
       await deleteProduct(productPendingDelete._id);
       await loadProducts();
+      toast.success(`Deleted "${productPendingDelete.title}" successfully.`);
       setProductPendingDelete(null);
-    } catch (err: any) {
-      setError(err?.message || "Failed to delete product");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to delete product");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setDeleteSubmitting(false);
     }
@@ -236,9 +241,12 @@ export function AdminProductManagementPage({
       await updateProduct(editingProductId, submitData);
       await loadProducts();
       await loadBrands();
+      toast.success("Product updated successfully!");
       resetEditDialog();
-    } catch (err: any) {
-      setEditError(err?.message || "Failed to update product");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to update product");
+      setEditError(msg);
+      toast.error(msg);
     } finally {
       setEditSubmitting(false);
     }

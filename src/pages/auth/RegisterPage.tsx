@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AuthField } from "@/components/auth/AuthField";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { getErrorMessage } from "@/lib/error";
 import { registerUser } from "@/services/userService";
 import toast from "react-hot-toast";
 
@@ -49,15 +50,21 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      const msg = "Passwords do not match.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!agreeTerms) {
-      setError("Please agree to the Terms of Service and Privacy Policy.");
+      const msg = "Please agree to the Terms of Service and Privacy Policy.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (!firstName || !lastName) {
-      setError("First name and last name are required.");
+      const msg = "First name and last name are required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -82,7 +89,7 @@ export function RegisterPage({ onClose, onSwitchToLogin }: RegisterPageProps) {
         navigate("/login");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Registration failed";
+      const msg = getErrorMessage(err, "Registration failed");
       setError(msg);
       toast.error(msg);
     } finally {

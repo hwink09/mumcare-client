@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CurrentUser } from "@/hooks/useAuth";
+import { getErrorMessage } from "@/lib/error";
 import { deleteProduct, getProducts, updateProduct } from "@/services/productService";
 import { getAllOrders, updateOrderStatus } from "@/services/orderService";
+import toast from "react-hot-toast";
 import { StaffBlogManagementPage } from "./StaffBlogManagementPage";
 import { StaffVoucherManagementPage } from "./StaffVoucherManagementPage";
 import { StaffChatDashboard } from "./StaffChatDashboard";
@@ -149,7 +151,9 @@ export function StaffDashboardPage({
     if (!order || order.status === status) return;
 
     if (isFinalOrderStatus(order.status)) {
-      setOrdersError("Cannot change status of a delivered or canceled order.");
+      const msg = "Cannot change status of a delivered or canceled order.";
+      setOrdersError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -159,9 +163,12 @@ export function StaffDashboardPage({
     try {
       await updateOrderStatus(orderId, status);
       await loadOrders();
+      toast.success(`Order status updated to ${ORDER_STATUS_LABEL[status] || status}.`);
     } catch (error) {
       console.error(error);
-      setOrdersError("Failed to update order. Please try again.");
+      const msg = getErrorMessage(error, "Failed to update order. Please try again.");
+      setOrdersError(msg);
+      toast.error(msg);
     } finally {
       setUpdatingOrderId((current) => (current === orderId ? null : current));
     }
@@ -187,7 +194,9 @@ export function StaffDashboardPage({
     const normalizedInput = stockInputValue.trim();
     const newQty = Number(normalizedInput);
     if (!normalizedInput || Number.isNaN(newQty) || newQty < 0) {
-      setStockDialogError("Please enter a valid non-negative number.");
+      const msg = "Please enter a valid non-negative number.";
+      setStockDialogError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -199,13 +208,16 @@ export function StaffDashboardPage({
       formData.append("quantity", newQty.toString());
       await updateProduct(editingInventoryProduct._id, formData);
       await loadProducts();
+      toast.success(`Updated stock for "${editingInventoryProduct.title}".`);
       setEditingInventoryProduct(null);
       setStockInputValue("");
       setStockDialogError(null);
     } catch (error) {
       console.error(error);
-      setStockDialogError("Failed to update product. Please try again.");
-      setProductsError("Failed to update product. Please try again.");
+      const msg = getErrorMessage(error, "Failed to update product. Please try again.");
+      setStockDialogError(msg);
+      setProductsError(msg);
+      toast.error(msg);
     } finally {
       setStockDialogSubmitting(false);
     }
@@ -228,10 +240,13 @@ export function StaffDashboardPage({
     try {
       await deleteProduct(deletingInventoryProduct._id);
       await loadProducts();
+      toast.success(`Deleted "${deletingInventoryProduct.title}" successfully.`);
       setDeletingInventoryProduct(null);
     } catch (error) {
       console.error(error);
-      setProductsError("Failed to delete product. Please try again.");
+      const msg = getErrorMessage(error, "Failed to delete product. Please try again.");
+      setProductsError(msg);
+      toast.error(msg);
     } finally {
       setDeleteDialogSubmitting(false);
     }

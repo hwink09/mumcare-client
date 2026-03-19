@@ -10,8 +10,10 @@ import { Textarea } from "../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
+import { getErrorMessage } from "@/lib/error";
 import { getBlogs, createBlog, updateBlog, deleteBlog } from "@/services/blogService";
 import { getBlogCategories } from "@/services/categoryService";
+import toast from "react-hot-toast";
 
 type AdminBlogManagementPageProps = {
   user?: CurrentUser | null;
@@ -90,7 +92,9 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
 
   const handleCreate = async () => {
     if (!formData.title.trim() || !formData.description.trim() || !formData.categoryId) {
-      setError("Please fill in all required fields (Title, Category, Description).");
+      const msg = "Please fill in all required fields (Title, Category, Description).";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -105,14 +109,19 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
       await loadData();
       setShowCreateDialog(false);
       resetForm();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Failed to create blog");
+      toast.success("Blog created successfully!");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to create blog");
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   const handleUpdate = async () => {
     if (!editingBlog || !formData.title.trim() || !formData.description.trim() || !formData.categoryId) {
-      setError("Please fill in all required fields (Title, Category, Description).");
+      const msg = "Please fill in all required fields (Title, Category, Description).";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -127,8 +136,11 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
       await loadData();
       setEditingBlog(null);
       resetForm();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Failed to update blog");
+      toast.success("Blog updated successfully!");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to update blog");
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -148,9 +160,12 @@ export function AdminBlogManagementPage({ user, onLogout, isEmbedded }: AdminBlo
     try {
       await deleteBlog(blogPendingDelete._id);
       await loadData();
+      toast.success(`Deleted "${blogPendingDelete.title}" successfully.`);
       setBlogPendingDelete(null);
-    } catch (err: any) {
-      setError(err?.message || "Failed to delete blog");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to delete blog");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setDeleteSubmitting(false);
     }

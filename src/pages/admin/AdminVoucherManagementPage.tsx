@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CurrentUser } from "@/hooks/useAuth";
+import { getErrorMessage } from "@/lib/error";
 import couponService from "@/services/couponService";
+import toast from "react-hot-toast";
 
 type Voucher = {
   _id: string;
@@ -99,15 +101,21 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
     setFormError(null);
 
     if (!formData.name.trim()) {
-      setFormError("Voucher code cannot be empty.");
+      const msg = "Voucher code cannot be empty.";
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
     if (formData.discount <= 0 || formData.discount >= 100) {
-      setFormError("Discount must be between 1 and 99 percentage.");
+      const msg = "Discount must be between 1 and 99 percentage.";
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
     if (formData.expiry <= 0) {
-      setFormError("Expiry must be at least 1 day.");
+      const msg = "Expiry must be at least 1 day.";
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -127,11 +135,14 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
       }
 
       await loadVouchers();
+      toast.success(isEditing ? "Voucher updated successfully!" : "Voucher created successfully!");
       setIsCreating(false);
       setIsEditing(null);
       resetForm();
-    } catch (err: any) {
-      setFormError(err?.message || "Operation failed.");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Operation failed.");
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -153,9 +164,12 @@ export function AdminVoucherManagementPage({ isEmbedded = false }: AdminVoucherM
     try {
       await couponService.delete(voucherPendingDelete._id);
       await loadVouchers();
+      toast.success(`Deleted voucher "${voucherPendingDelete.name}" successfully.`);
       setVoucherPendingDelete(null);
-    } catch {
-      setError("Failed to delete voucher.");
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to delete voucher.");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setDeleteSubmitting(false);
     }
