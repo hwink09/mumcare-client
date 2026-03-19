@@ -1,6 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth, useCart } from "@/hooks/useAuth";
 import { HomePage } from "@/pages/home/HomePage";
+import { resolvePageRoute } from "@/lib/pageRoutes";
+import type { Product } from "@/types/product";
 
 interface MainLayoutProps {
   auth: ReturnType<typeof useAuth>;
@@ -8,25 +10,36 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ auth, cart }: MainLayoutProps) {
+  const location = useLocation();
   const navigate = useNavigate();
 
+  const goToLogin = (redirectTo: string) => {
+    navigate("/login", { state: { redirectTo } });
+  };
+
   const handleNavigate = (page: string) => {
-    if (page === "home") navigate("/");
-    else if (page === "products") navigate("/products");
-    else if (page === "profile") navigate("/profile");
-    else if (page === "orders") navigate("/orders");
-    else if (page === "loyalty") navigate("/loyalty");
-    else if (page === "articles") navigate("/blogs");
-    else if (page === "cart") navigate("/cart");
-    else if (page === "contact") navigate("/contact");
-    else if (page === "about") navigate("/about");
-    else console.log(`Navigate to: ${page}`);
+    if (page === "cart" && !auth.isLoggedIn) {
+      goToLogin("/cart");
+      return;
+    }
+
+    navigate(resolvePageRoute(page));
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (!auth.isLoggedIn) {
+      goToLogin(`${location.pathname}${location.search}`);
+      return false;
+    }
+
+    return cart.addToCart(product);
   };
 
   return (
     <HomePage
       onNavigate={handleNavigate}
-      onAddToCart={cart.addToCart}
+      onAddToCart={handleAddToCart}
+      cartItemCount={cart.cartItemCount}
       onLoginClick={() => navigate("/login")}
       onRegisterClick={() => navigate("/register")}
       isLoggedIn={auth.isLoggedIn}

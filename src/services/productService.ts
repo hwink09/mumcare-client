@@ -1,29 +1,4 @@
-const API_BASE_URL = 'http://localhost:8017/v1';
-
-const getHeaders = (includeAuth = false) => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (includeAuth) {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
-  
-  return headers;
-};
-
-const buildQueryString = (params: Record<string, unknown>) => {
-  const usp = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => {
-    if (v === undefined || v === null || v === '') return;
-    usp.set(k, String(v));
-  });
-  const qs = usp.toString();
-  return qs ? `?${qs}` : '';
-};
+import axiosInstance from '../utils/axios';
 
 export type GetProductsParams = {
   page?: number;
@@ -33,56 +8,64 @@ export type GetProductsParams = {
   minPrice?: number;
   maxPrice?: number;
   sort?: string;
+  search?: string;
 };
 
 const productService = {
   getAll: async (params: GetProductsParams = {}) => {
-    const response = await fetch(`${API_BASE_URL}/products${buildQueryString(params)}`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch products');
-    
+    const data: any = await axiosInstance.get('/products', { params });
     return data.data || data;
   },
 
-  getById: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
+  getAllWithPagination: async (params: GetProductsParams = {}) => {
+    const data: any = await axiosInstance.get('/products', { params });
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return {
+        data: Array.isArray(data.data) ? data.data : [],
+        pagination: data.pagination || null,
+      };
+    }
+    return {
+      data: Array.isArray(data) ? data : [],
+      pagination: null,
+    };
+  },
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch product');
-    
+  getById: async (id: string) => {
+    const data: any = await axiosInstance.get(`/products/${encodeURIComponent(id)}`);
     return data.data || data;
   },
 
   addRating: async (id: string, payload: { star: number; comment?: string }) => {
-    const response = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(id)}/ratings`, {
-      method: 'PUT',
-      headers: getHeaders(true),
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
+    const data: any = await axiosInstance.put(`/products/${encodeURIComponent(id)}/ratings`, payload);
+    return data.data || data;
+  },
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to submit rating');
-    
+  create: async (formData: FormData) => {
+    const data: any = await axiosInstance.post('/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data.data || data;
+  },
+
+  update: async (id: string, formData: FormData) => {
+    const data: any = await axiosInstance.put(`/products/${encodeURIComponent(id)}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return data.data || data;
   },
 
   getCategories: async () => {
-    const response = await fetch(`${API_BASE_URL}/product-categories`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
+    const data: any = await axiosInstance.get('/product-categories');
+    return data.data || data;
+  },
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to fetch categories');
-    
+  delete: async (id: string) => {
+    const data: any = await axiosInstance.delete(`/products/${encodeURIComponent(id)}`);
     return data.data || data;
   },
 };
@@ -91,6 +74,10 @@ export default productService;
 
 // Legacy exports for compatibility
 export const getProducts = productService.getAll;
+export const getProductsWithPagination = productService.getAllWithPagination;
 export const getProductById = productService.getById;
-export const addRating = productService.addRating;
+export const createProduct = productService.create;
+export const updateProduct = productService.update;
 export const getCategories = productService.getCategories;
+export const deleteProduct = productService.delete;
+export const addRating = productService.addRating;

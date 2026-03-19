@@ -1,169 +1,78 @@
-const API_BASE_URL = 'http://localhost:8017/v1';
+import axiosInstance from '../utils/axios';
+import { removeToken, setToken } from "../utils/token";
 
 const authService = {
-  register: async (userData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/users/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Registration failed');
+  register: async (userData: any) => {
+    const data: any = await axiosInstance.post('/users/auth/register', userData);
     return data;
   },
 
-  login: async (credentials: { email: string; password: string }) => {
-    const response = await fetch(`${API_BASE_URL}/users/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(credentials),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Login failed');
-
-    // Server response shape:
-    // { success, message, accessToken, data: user }
+  login: async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
+    const data: any = await axiosInstance.post('/users/auth/login', credentials);
+    
+    // Extract token
     const token = data.accessToken || data?.data?.accessToken;
     if (token) {
-      localStorage.setItem('accessToken', token);
+      setToken(token, credentials.rememberMe || false);
     }
-
-    // Always return the user object for convenience
-    const user = data?.data || data?.user || data;
-    return user;
+    
+    return data?.data || data?.user || data;
   },
 
   logout: async () => {
-    const token = localStorage.getItem('accessToken');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const data: any = await axiosInstance.delete('/users/auth/logout');
+      return data;
+    } finally {
+      removeToken();
     }
-
-    const response = await fetch(`${API_BASE_URL}/users/auth/logout`, {
-      method: 'DELETE',
-      headers,
-      credentials: 'include',
-    });
-
-    // Clear token from localStorage
-    localStorage.removeItem('accessToken');
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Logout failed');
-    return data;
   },
 
-  getMe: async (): Promise<{ firstName?: string; lastName?: string; email?: string; phone?: string; role?: string; _id?: string; id?: string }> => {
-    const fetchMe = async () => {
-      const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/users/me`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-      return { response, data };
-    };
-
-    // First attempt with current access token
-    let { response, data } = await fetchMe();
-
-    // If access token is expired (401/403/410 or specific message), try to refresh once
-    if (
-      !response.ok &&
-      (response.status === 401 ||
-        response.status === 403 ||
-        response.status === 410 ||
-        typeof data?.message === 'string' &&
-          data.message.toLowerCase().includes('token expired'))
-    ) {
-      try {
-        await refreshAccessToken();
-        ({ response, data } = await fetchMe());
-      } catch {
-        // Refresh failed, clear token and rethrow below
-        localStorage.removeItem('accessToken');
-      }
-    }
-
-    if (!response.ok) {
-      // If still unauthorized after refresh, ensure local token is cleared
-      if (response.status === 401 || response.status === 403 || response.status === 410) {
-        localStorage.removeItem('accessToken');
-      }
-      throw new Error(data?.message || 'Failed to fetch user');
-    }
-
+  getMe: async () => {
+    // Axios interceptor automatically handles sending token and refresh retry if 401
+    const data: any = await axiosInstance.get('/users/me');
     return data.data || data;
   },
 
-  updateProfile: async (userData: {
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-  }) => {
-    const token = localStorage.getItem('accessToken');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  updateProfile: async (userData: any) => {
+    const data: any = await axiosInstance.put('/users/me', userData);
+    return data.data || data;
+  },
 
-    const response = await fetch(`${API_BASE_URL}/users/me`, {
-      method: 'PUT',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify(userData),
-    });
+  getUsers: async (query?: { role?: string; isBlocked?: boolean; email?: string; phone?: string; page?: number; limit?: number; sort?: string; }) => {
+    const params = { ...query };
+    const data: any = await axiosInstance.get('/users', { params });
+    return data.data || data;
+  },
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to update profile');
-    
+  updateUserByAdmin: async (userId: string, payload: Record<string, unknown>) => {
+    const data: any = await axiosInstance.put(`/users/${encodeURIComponent(userId)}`, payload);
+    return data.data || data;
+  },
+
+  deleteUser: async (userId: string) => {
+    const data: any = await axiosInstance.delete(`/users/${encodeURIComponent(userId)}`);
     return data.data || data;
   },
 
   forgotPassword: async (email: string) => {
-    const response = await fetch(`${API_BASE_URL}/users/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to send reset link');
-    
+    const data: any = await axiosInstance.post('/users/auth/forgot-password', { email });
     return data;
   },
 
-  resetPassword: async (token: string, password: string, confirmPassword: string) => {
-    const response = await fetch(`${API_BASE_URL}/users/auth/reset-password/${token}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ password, confirmPassword }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.message || 'Failed to reset password');
-    
+  resetPassword: async (token: string, password: string) => {
+    const data: any = await axiosInstance.post(`/users/auth/reset-password/${token}`, { password });
     return data;
+  },
+
+  redeemCoupon: async (couponId: string) => {
+    const data: any = await axiosInstance.post('/users/me/coupons/redeem', { couponId });
+    return data.data || data;
+  },
+
+  useCoupon: async (couponId: string) => {
+    const data: any = await axiosInstance.post('/users/me/coupons/use', { couponId });
+    return data.data || data;
   },
 };
 
@@ -175,32 +84,8 @@ export const loginUser = authService.login;
 export const logoutUser = authService.logout;
 export const getCurrentUser = authService.getMe;
 export const updateProfile = authService.updateProfile;
+export const getUsers = authService.getUsers;
+export const updateUserByAdmin = authService.updateUserByAdmin;
+export const deleteUser = authService.deleteUser;
+export const redeemCoupon = authService.redeemCoupon;
 
-// Refresh Access Token
-export const refreshAccessToken = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/auth/refresh-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Để gửi refreshToken cookie
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Token refresh failed');
-    }
-
-    // Cập nhật accessToken
-    if (data.accessToken) {
-      localStorage.setItem('accessToken', data.accessToken);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Refresh token error:', error);
-    throw error;
-  }
-};
