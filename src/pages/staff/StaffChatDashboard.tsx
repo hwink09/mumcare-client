@@ -1,9 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { Send, User as UserIcon, MessageSquare } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { Socket } from 'socket.io-client';
+import { MessageSquare, Send, User as UserIcon } from 'lucide-react';
 import type { CurrentUser } from '@/hooks/useAuth';
-
-const SOCKET_URL = 'http://localhost:8017';
+import {
+  createChatSocket,
+  getChatDisplayName,
+  getChatUserId,
+  isStaffRole,
+} from '@/lib/chatSocket';
 
 interface ChatMessage {
   senderId: string;
@@ -28,72 +32,93 @@ interface StaffChatDashboardProps {
   isEmbedded?: boolean;
 }
 
+const mergeActiveClients = (
+  currentClients: ActiveClient[],
+  incomingClients: ActiveClient[],
+  defaults: Partial<ActiveClient> = {},
+) => {
+  const mergedClients = new Map(currentClients.map((client) => [client.userId, client]));
+
+  incomingClients.forEach((client) => {
+    const existingClient = mergedClients.get(client.userId);
+    mergedClients.set(client.userId, {
+      ...defaults,
+      ...existingClient,
+      ...client,
+    });
+  });
+
+  return Array.from(mergedClients.values());
+};
+
 export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps) {
   const [activeClients, setActiveClients] = useState<ActiveClient[]>([]);
-  const [selectedClient, setSelectedClient] = useState<ActiveClient | null>(null);
-  
-  // Store chat histories per client (key is userId)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({});
   const [inputValue, setInputValue] = useState('');
   const socketRef = useRef<Socket | null>(null);
+  const selectedClientIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const staffUserId = getChatUserId(user);
+  const staffRole = user?.role || 'staff';
+  const staffName = getChatDisplayName(user, 'Staff');
+  const canUseStaffChat = Boolean(user && isStaffRole(user.role));
+  const selectedClient = selectedClientId
+    ? activeClients.find((client) => client.userId === selectedClientId) || null
+    : null;
+  const currentHistory = selectedClientId ? chatHistories[selectedClientId] || [] : [];
+
   useEffect(() => {
-    if (!user || (user.role !== 'staff' && user.role !== 'admin' && user.role !== 'manager')) {
+    selectedClientIdRef.current = selectedClientId;
+  }, [selectedClientId]);
+
+  useEffect(() => {
+    if (!canUseStaffChat || !staffUserId) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
       return;
     }
 
-    const socket = io(SOCKET_URL);
+    const socket = createChatSocket();
     socketRef.current = socket;
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       socket.emit('join_chat', {
-        userId: user._id || user.id || user.email || `staff-${Date.now()}`,
-        role: user.role,
-        name: user.firstName ? `${user.firstName} ${user.lastName}` : 'Staff'
+        userId: staffUserId,
+        role: staffRole,
+        name: staffName,
       });
-    });
+    };
 
-    socket.on('active_clients', (clients: ActiveClient[]) => {
-      setActiveClients((prev) => {
-        const newClients = [...prev];
-        clients.forEach(c => {
-          const index = newClients.findIndex(p => p.userId === c.userId);
-          if (index >= 0) {
-            newClients[index] = { ...newClients[index], ...c, isOnline: true };
-          } else {
-            newClients.push({ ...c, isOnline: true });
-          }
-        });
-        return newClients;
-      });
-    });
+    const handleActiveClients = (clients: ActiveClient[]) => {
+      setActiveClients((prev) => mergeActiveClients(prev, clients));
+    };
 
-    socket.on('load_all_histories', (histories: Record<string, ChatMessage[]>) => {
+    const handleLoadAllHistories = (histories: Record<string, ChatMessage[]>) => {
       setChatHistories(histories);
-    });
+    };
 
-    socket.on('client_online', (clients: ActiveClient[]) => {
-      setActiveClients((prev) => {
-        const newClients = [...prev];
-        clients.forEach(c => {
-          const index = newClients.findIndex(p => p.userId === c.userId);
-          if (index >= 0) {
-            newClients[index] = { ...newClients[index], ...c, isOnline: true };
-          } else {
-            newClients.push({ ...c, isOnline: true, unreadCount: 0 });
-          }
-        });
-        return newClients;
-      });
-    });
+    const handleClientOnline = (clients: ActiveClient[]) => {
+      setActiveClients((prev) =>
+        mergeActiveClients(prev, clients, {
+          isOnline: true,
+          unreadCount: 0,
+        }),
+      );
+    };
 
-    socket.on('client_offline', (userId: string) => {
-      setActiveClients((prev) => prev.map(c => c.userId === userId ? { ...c, isOnline: false } : c));
-    });
+    const handleClientOffline = (offlineUserId: string) => {
+      setActiveClients((prev) =>
+        prev.map((client) =>
+          client.userId === offlineUserId ? { ...client, isOnline: false } : client,
+        ),
+      );
+    };
 
-    socket.on('receive_message', (msg: ChatMessage) => {
-      // Determine which client this message belongs to
+    const handleReceiveMessage = (msg: ChatMessage) => {
       const conversationId = msg.isStaff ? msg.receiverId : msg.senderId;
       if (!conversationId) return;
 
@@ -101,73 +126,88 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
         const history = prev[conversationId] || [];
         return {
           ...prev,
-          [conversationId]: [...history, msg]
+          [conversationId]: [...history, msg],
         };
       });
 
-      // Update unread count if not currently selected
-      setSelectedClient((currentSelected) => {
-        if (!currentSelected || currentSelected.userId !== conversationId) {
-          setActiveClients((prevClients) => 
-            prevClients.map(c => 
-              c.userId === conversationId 
-                ? { ...c, unreadCount: (c.unreadCount || 0) + 1 }
-                : c
-            )
-          );
-        }
-        return currentSelected;
-      });
-    });
+      if (selectedClientIdRef.current === conversationId) {
+        return;
+      }
+
+      setActiveClients((prev) =>
+        prev.map((client) =>
+          client.userId === conversationId
+            ? { ...client, unreadCount: (client.unreadCount || 0) + 1 }
+            : client,
+        ),
+      );
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('active_clients', handleActiveClients);
+    socket.on('load_all_histories', handleLoadAllHistories);
+    socket.on('client_online', handleClientOnline);
+    socket.on('client_offline', handleClientOffline);
+    socket.on('receive_message', handleReceiveMessage);
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('active_clients', handleActiveClients);
+      socket.off('load_all_histories', handleLoadAllHistories);
+      socket.off('client_online', handleClientOnline);
+      socket.off('client_offline', handleClientOffline);
+      socket.off('receive_message', handleReceiveMessage);
       socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [user]);
 
-  // Scroll to bottom when messages change
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
+    };
+  }, [canUseStaffChat, staffName, staffRole, staffUserId]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistories, selectedClient]);
+  }, [currentHistory.length, selectedClientId]);
 
   const selectClient = (client: ActiveClient) => {
-    setSelectedClient(client);
-    // Reset unread count
-    setActiveClients(prev => prev.map(c => 
-      c.userId === client.userId ? { ...c, unreadCount: 0 } : c
-    ));
+    setSelectedClientId(client.userId);
+    setActiveClients((prev) =>
+      prev.map((currentClient) =>
+        currentClient.userId === client.userId
+          ? { ...currentClient, unreadCount: 0 }
+          : currentClient,
+      ),
+    );
   };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !socketRef.current || !user || !selectedClient) return;
+    if (!inputValue.trim() || !socketRef.current || !staffUserId || !selectedClientId) return;
 
     socketRef.current.emit('send_message', {
-      senderId: user._id || user.id || user.email || `staff`,
-      receiverId: selectedClient.userId,
-      role: user.role,
+      senderId: staffUserId,
+      receiverId: selectedClientId,
+      role: staffRole,
       message: inputValue.trim(),
     });
 
     setInputValue('');
   };
 
-  const currentHistory = selectedClient ? (chatHistories[selectedClient.userId] || []) : [];
-  
-  // Find the selected client's current status from the activeClients array
-  const selectedClientCurrent = activeClients.find(c => c.userId === selectedClient?.userId);
-  const selectedClientIsOnline = selectedClientCurrent ? selectedClientCurrent.isOnline : false;
+  const selectedClientIsOnline = selectedClient?.isOnline ?? false;
 
   return (
-    <div className={`flex bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${isEmbedded ? 'h-[600px]' : 'h-screen'}`}>
-      {/* Sidebar: Active Clients */}
+    <div
+      className={`flex bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${
+        isEmbedded ? 'h-[600px]' : 'h-screen'
+      }`}
+    >
       <div className="w-1/3 min-w-[250px] border-r border-slate-200 flex flex-col bg-slate-50">
         <div className="p-4 bg-white border-b border-slate-200 shrink-0 flex items-center gap-2">
           <MessageSquare className="text-pink-600" size={20} />
           <h2 className="font-semibold text-slate-800">Live Support Chat</h2>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-2">
           {activeClients.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center">
@@ -181,7 +221,7 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
                   key={client.userId}
                   onClick={() => selectClient(client)}
                   className={`w-full text-left p-3 rounded-lg flex items-center justify-between transition-colors ${
-                    selectedClient?.userId === client.userId
+                    selectedClientId === client.userId
                       ? 'bg-pink-50 border border-pink-100 shadow-sm'
                       : 'hover:bg-slate-100 border border-transparent'
                   }`}
@@ -189,10 +229,18 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
                   <div className="flex items-center gap-3 overflow-hidden">
                     <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center shrink-0 text-slate-500 font-semibold relative">
                       {client.name?.charAt(0).toUpperCase() || <UserIcon size={20} />}
-                      {client.isOnline && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>}
+                      {client.isOnline && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                      )}
                     </div>
                     <div className="truncate">
-                      <p className={`text-sm truncate ${selectedClient?.userId === client.userId ? 'font-semibold text-pink-900' : 'font-medium text-slate-700'}`}>
+                      <p
+                        className={`text-sm truncate ${
+                          selectedClientId === client.userId
+                            ? 'font-semibold text-pink-900'
+                            : 'font-medium text-slate-700'
+                        }`}
+                      >
                         {client.name || 'Client'}
                       </p>
                       <p className="text-xs text-slate-400">
@@ -212,7 +260,6 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
         </div>
       </div>
 
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white">
         {!selectedClient ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
@@ -221,7 +268,6 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
           </div>
         ) : (
           <>
-            {/* Chat Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-semibold text-lg">
@@ -229,15 +275,22 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-800">{selectedClient.name}</h3>
-                  <p className={`text-xs flex items-center gap-1 ${selectedClientIsOnline ? 'text-green-600' : 'text-slate-400'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${selectedClientIsOnline ? 'bg-green-500' : 'bg-slate-400'}`}></span>
+                  <p
+                    className={`text-xs flex items-center gap-1 ${
+                      selectedClientIsOnline ? 'text-green-600' : 'text-slate-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full inline-block ${
+                        selectedClientIsOnline ? 'bg-green-500' : 'bg-slate-400'
+                      }`}
+                    ></span>
                     {selectedClientIsOnline ? 'Online' : 'Offline'}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {currentHistory.length === 0 ? (
                 <div className="text-center text-slate-400 mt-10 text-sm">
@@ -246,16 +299,26 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
               ) : (
                 currentHistory.map((msg, idx) => {
                   const isMe = msg.isStaff;
+
                   return (
                     <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-2xl px-5 py-3 text-[15px] shadow-sm leading-relaxed ${
-                        isMe 
-                          ? 'bg-pink-600 text-white rounded-tr-sm' 
-                          : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200/50'
-                      }`}>
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-5 py-3 text-[15px] shadow-sm leading-relaxed ${
+                          isMe
+                            ? 'bg-pink-600 text-white rounded-tr-sm'
+                            : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200/50'
+                        }`}
+                      >
                         {msg.message}
-                        <div className={`text-[11px] mt-1.5 flex items-center ${isMe ? 'text-pink-100 justify-end' : 'text-slate-400 justify-start'}`}>
-                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div
+                          className={`text-[11px] mt-1.5 flex items-center ${
+                            isMe ? 'text-pink-100 justify-end' : 'text-slate-400 justify-start'
+                          }`}
+                        >
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </div>
                       </div>
                     </div>
@@ -265,7 +328,6 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div className="p-4 border-t border-slate-100 shrink-0">
               <form onSubmit={handleSend} className="flex relative">
                 <input
@@ -280,7 +342,7 @@ export function StaffChatDashboard({ user, isEmbedded }: StaffChatDashboardProps
                   disabled={!inputValue.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-pink-600 text-white p-2.5 rounded-full disabled:bg-slate-200 disabled:text-slate-400 transition-colors hover:bg-pink-700"
                 >
-                  <Send size={16} className={inputValue.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+                  <Send size={16} className={inputValue.trim() ? 'translate-x-0.5 -translate-y-0.5' : ''} />
                 </button>
               </form>
             </div>

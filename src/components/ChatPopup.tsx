@@ -1,8 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { io, Socket } from 'socket.io-client';
-import { MessageCircle, X, Send } from 'lucide-react';
+import type { Socket } from 'socket.io-client';
+import { MessageCircle, Send, X } from 'lucide-react';
 import type { CurrentUser as User } from '@/hooks/useAuth';
+import {
+  createChatSocket,
+  getChatDisplayName,
+  getChatUserId,
+  isStaffRole,
+} from '@/lib/chatSocket';
 
 interface ChatMessage {
   senderId: string;
@@ -18,28 +24,32 @@ interface ChatPopupProps {
   isLoggedIn: boolean;
 }
 
-const SOCKET_URL = 'http://localhost:8017';
-
 export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const socketRef = useRef<Socket | null>(null);
+  const isOpenRef = useRef(isOpen);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const userId = getChatUserId(user);
+  const userRole = user?.role || 'client';
+  const displayName = getChatDisplayName(user, 'Client');
+  const isClient = Boolean(user && !isStaffRole(user.role));
+
   useEffect(() => {
-    // Clear chat history when switching users
     setMessages([]);
     setUnreadCount(0);
   }, [user?._id, user?.id, user?.email]);
 
   useEffect(() => {
-    // Only connect if logged in user is a regular client
-    const isClient = user && user.role !== 'staff' && user.role !== 'admin' && user.role !== 'manager';
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
-    if (!isLoggedIn || !isClient) {
+  useEffect(() => {
+    if (!isLoggedIn || !isClient || !userId) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -47,69 +57,75 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
       return;
     }
 
-    const socket = io(SOCKET_URL);
+    const socket = createChatSocket();
     socketRef.current = socket;
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       socket.emit('join_chat', {
-        userId: user._id || user.id || user.email || `guest-${Date.now()}`,
-        role: user.role || 'client',
-        name: user.firstName ? `${user.firstName} ${user.lastName}` : ('Client'),
+        userId,
+        role: userRole,
+        name: displayName,
       });
-    });
+    };
 
-    socket.on('load_chat_history', (history: ChatMessage[]) => {
-      setMessages(history || []);
-    });
+    const handleLoadChatHistory = (history: ChatMessage[] = []) => {
+      setMessages(history);
+    };
 
-    socket.on('receive_message', (msg: ChatMessage) => {
-      setMessages((prev) => {
-        // Prevent duplicate messages by verifying timestamp or content if needed, but for now just append
-        return [...prev, msg];
-      });
-      if (!isOpen) {
+    const handleReceiveMessage = (msg: ChatMessage) => {
+      setMessages((prev) => [...prev, msg]);
+      if (!isOpenRef.current) {
         setUnreadCount((prev) => prev + 1);
       }
-    });
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('load_chat_history', handleLoadChatHistory);
+    socket.on('receive_message', handleReceiveMessage);
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('load_chat_history', handleLoadChatHistory);
+      socket.off('receive_message', handleReceiveMessage);
       socket.disconnect();
-      socketRef.current = null;
+
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
     };
-  }, [user, isLoggedIn]);
+  }, [displayName, isClient, isLoggedIn, userId, userRole]);
 
   useEffect(() => {
     if (isOpen) {
       setUnreadCount(0);
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [isOpen, messages.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
     if (!isLoggedIn || !user) {
-      alert("Bạn cần đăng nhập để trò chuyện.");
+      alert('Ban can dang nhap de tro chuyen.');
       setIsOpen(false);
       navigate('/login');
       return;
     }
 
-    if (!socketRef.current) return;
+    if (!socketRef.current || !userId) return;
 
     socketRef.current.emit('send_message', {
-      senderId: user._id || user.id || user.email || `guest`,
-      role: user.role || 'client',
-      name: user.firstName ? `${user.firstName} ${user.lastName}` : ('Client'),
+      senderId: userId,
+      role: userRole,
+      name: displayName,
       message: inputValue.trim(),
     });
 
     setInputValue('');
   };
 
-  // Hide for staff/admin even if they are logged in
-  if (isLoggedIn && user && (user.role === 'staff' || user.role === 'admin' || user.role === 'manager')) {
+  if (isLoggedIn && user && isStaffRole(user.role)) {
     return null;
   }
 
@@ -129,7 +145,6 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
         </button>
       ) : (
         <div className="bg-white rounded-2xl shadow-2xl w-80 sm:w-[380px] overflow-hidden flex flex-col h-[550px] max-h-[85vh] border border-gray-100 animate-in slide-in-from-bottom-5 duration-300">
-          {/* Header */}
           <div className="bg-gradient-to-r from-pink-600 to-rose-500 p-4 shrink-0 flex items-center justify-between text-white relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-white opacity-5 mix-blend-overlay"></div>
             <div className="flex items-center space-x-3 z-10">
@@ -149,7 +164,6 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col space-y-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
@@ -158,20 +172,31 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
                 </div>
                 <div className="text-center px-4">
                   <p className="text-sm font-medium text-slate-500">How can we help you today?</p>
-                  <p className="text-xs text-slate-400 mt-1">Send us a message and we'll reply as soon as possible.</p>
+                  <p className="text-xs text-slate-400 mt-1">Send us a message and we&apos;ll reply as soon as possible.</p>
                 </div>
               </div>
             ) : (
               messages.map((msg, idx) => {
                 const isMe = !msg.isStaff;
+
                 return (
-                  <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] shadow-sm leading-relaxed ${isMe
-                      ? 'bg-pink-600 text-white rounded-tr-sm'
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-sm shadow-sm'
-                      }`}>
+                  <div
+                    key={idx}
+                    className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] shadow-sm leading-relaxed ${
+                        isMe
+                          ? 'bg-pink-600 text-white rounded-tr-sm'
+                          : 'bg-white text-slate-800 border border-slate-200 rounded-tl-sm shadow-sm'
+                      }`}
+                    >
                       {msg.message}
-                      <div className={`text-[10px] mt-1.5 ${isMe ? 'text-pink-100' : 'text-slate-400'} flex items-center ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`text-[10px] mt-1.5 ${
+                          isMe ? 'text-pink-100' : 'text-slate-400'
+                        } flex items-center ${isMe ? 'justify-end' : 'justify-start'}`}
+                      >
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -182,7 +207,6 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-4 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.02)]">
             <form onSubmit={handleSend} className="flex relative items-center gap-2">
               <input
@@ -197,7 +221,7 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({ user, isLoggedIn }) => {
                 disabled={!inputValue.trim()}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-pink-600 text-white p-2.5 rounded-full disabled:bg-slate-200 disabled:text-slate-400 transition-all hover:bg-pink-700 hover:shadow-md disabled:hover:shadow-none"
               >
-                <Send size={16} className={inputValue.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+                <Send size={16} className={inputValue.trim() ? 'translate-x-0.5 -translate-y-0.5' : ''} />
               </button>
             </form>
           </div>
