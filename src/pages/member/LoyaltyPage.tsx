@@ -9,6 +9,7 @@ import {
   Star,
   TicketPercent,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -182,7 +183,7 @@ export function LoyaltyPage() {
 
   const openExchangeDialog = (coupon: Coupon) => {
     if (points < (coupon.pointCost || 0)) {
-      alert(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
+      toast.error(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
       return;
     }
     setCouponPendingExchange(coupon);
@@ -200,14 +201,14 @@ export function LoyaltyPage() {
 
     try {
       await authService.redeemCoupon(couponPendingExchange._id);
-      alert("Voucher exchanged successfully!");
+      toast.success("Voucher exchanged successfully!");
 
       setPoints((prev) => prev - (couponPendingExchange.pointCost || 0));
       setCoupons((prev) => [...prev, couponPendingExchange]);
       setExchangeableCoupons((prev) => prev.filter((item) => item._id !== couponPendingExchange._id));
       setCouponPendingExchange(null);
     } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || "Exchange failed.");
+      toast.error(err?.response?.data?.message || err?.message || "Exchange failed.");
     } finally {
       setExchangeLoading(null);
     }

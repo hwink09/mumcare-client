@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentUser, updateProfile } from "@/services/userService";
 import type { CurrentUser } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 interface ProfilePageProps {
   initialUser?: CurrentUser | null;
@@ -106,9 +107,13 @@ export function ProfilePage({ initialUser }: ProfilePageProps) {
       setFirstName(mergedUser.firstName || "");
       setLastName(mergedUser.lastName || "");
       setPhone(mergedUser.phone || "");
-      setSuccessMessage("Profile updated successfully.");
+      const msg = "Profile updated successfully.";
+      setSuccessMessage(msg);
+      toast.success(msg);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to update profile.");
+      const msg = err instanceof Error ? err.message : "Failed to update profile.";
+      setSaveError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

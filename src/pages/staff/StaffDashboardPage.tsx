@@ -12,8 +12,9 @@ import { deleteProduct, getProducts, updateProduct } from "@/services/productSer
 import { getAllOrders, updateOrderStatus } from "@/services/orderService";
 import { StaffBlogManagementPage } from "./StaffBlogManagementPage";
 import { StaffVoucherManagementPage } from "./StaffVoucherManagementPage";
+import { StaffChatDashboard } from "./StaffChatDashboard";
 
-type StaffTab = "orders" | "inventory" | "blogs" | "vouchers";
+type StaffTab = "orders" | "inventory" | "blogs" | "vouchers" | "chat";
 
 type StaffDashboardProps = {
   user?: CurrentUser | null;
@@ -52,6 +53,7 @@ const STAFF_TAB_ROUTES: Record<StaffTab, string> = {
   inventory: "/staff/inventory",
   blogs: "/staff/blogs",
   vouchers: "/staff/vouchers",
+  chat: "/staff/chat",
 };
 
 const isFinalOrderStatus = (status: string) => status === "delivered" || status === "canceled";
@@ -291,6 +293,9 @@ export function StaffDashboardPage({
           <Button className={tabClass("blogs")} onClick={() => handleTabChange("blogs")}>
             Blogs
           </Button>
+          <Button className={tabClass("chat")} onClick={() => handleTabChange("chat")}>
+            Live Chat
+          </Button>
         </div>
 
         {activeTab === "orders" && (
@@ -477,6 +482,12 @@ export function StaffDashboardPage({
         {activeTab === "blogs" && (
           <div className="mt-4">
             <StaffBlogManagementPage user={user} onLogout={onLogout} isEmbedded />
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="mt-4">
+            <StaffChatDashboard user={user} isEmbedded />
           </div>
         )}
 

@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { CurrentUser } from "@/hooks/useAuth";
 import couponService from "@/services/couponService";
 import authService from "@/services/userService";
+import toast from "react-hot-toast";
 
 type CouponsPageProps = {
   user?: CurrentUser | null;
@@ -68,7 +69,7 @@ export function CouponsPage({ user }: CouponsPageProps) {
 
   const openExchangeDialog = (coupon: Coupon) => {
     if (points < (coupon.pointCost || 0)) {
-        alert(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
+        toast.error(`Not enough points. Required: ${coupon.pointCost}, available: ${points}`);
         return;
     }
     setCouponPendingExchange(coupon);
@@ -85,11 +86,11 @@ export function CouponsPage({ user }: CouponsPageProps) {
     setExchangeLoading(couponPendingExchange._id);
     try {
         await authService.redeemCoupon(couponPendingExchange._id);
-        alert("Voucher exchanged successfully!");
+        toast.success("Voucher exchanged successfully!");
         setCouponPendingExchange(null);
         void loadData();
     } catch (err: any) {
-        alert(err?.response?.data?.message || err?.message || "Exchange failed.");
+        toast.error(err?.response?.data?.message || err?.message || "Exchange failed.");
     } finally {
         setExchangeLoading(null);
     }
