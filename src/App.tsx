@@ -56,12 +56,12 @@ function AppRoutes({ auth, cart }: AppRoutesProps) {
   return (
     <>
       <Routes>
-        <PublicRoutes {...routeProps} />
-        <GuestRoutes {...routeProps} />
-        <MemberRoutes {...routeProps} />
-        <StaffRoutes {...routeProps} />
-        <AdminRoutes {...routeProps} />
-        <ErrorRoutes />
+        {PublicRoutes(routeProps)}
+        {GuestRoutes(routeProps)}
+        {MemberRoutes(routeProps)}
+        {StaffRoutes(routeProps)}
+        {AdminRoutes(routeProps)}
+        {ErrorRoutes()}
       </Routes>
 
       {!handlers.shouldHideChatPopup ? (
