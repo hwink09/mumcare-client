@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://localhost:8017";
+import { API_ROOT } from "@/utils/constants";
 
 export const extractImageUrl = (value: unknown): string => {
   if (typeof value === "string") return value.trim();
@@ -49,11 +49,11 @@ export const resolveImageUrl = (value: string): string => {
   }
 
   if (normalized.startsWith("/uploads")) {
-    return `${BACKEND_URL}${normalized}`;
+    return `${API_ROOT}${normalized}`;
   }
 
   if (normalized.startsWith("uploads/")) {
-    return `${BACKEND_URL}/${normalized}`;
+    return `${API_ROOT}/${normalized}`;
   }
 
   return normalized;

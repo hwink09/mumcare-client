@@ -6,7 +6,7 @@
   "author": "Hwinkdev",
   "description": "MumCare - Cửa hàng sữa cho mẹ bầu và em bé",
   "engines": {
-    "node": "18.x"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "vite",

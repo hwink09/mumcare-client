@@ -1,9 +1,8 @@
 import { io } from "socket.io-client";
 import type { CurrentUser } from "@/hooks/useAuth";
+import { SOCKET_URL } from "@/utils/constants";
 
 const STAFF_ROLE_SET = new Set(["staff", "admin", "manager"]);
-
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8017";
 
 export const createChatSocket = () => io(SOCKET_URL);
 
